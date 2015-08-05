@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<form method="post" id="post_form_id">
+		<?php wp_nonce_field('update-options'); ?>
+		<h2>Consumers Union plugin general settings</h2>
+		<p class="submit">
+			<input type="submit" class="button-primary"
+				value="<?php _e('Save Changes') ?>" />
+		</p>
+		<div class="section">
+			<h3 class="itemtitle">stori.es API Configuration</h3>
+			<table class="form-table">
+
+				<tr valign="top">
+					<th scope="row">API User</th>
+					<td><input type="text" name="custory_api_user" class="regular-text code" 
+							   value="<?php echo get_option('custory_api_user'); ?>" /></td>
+				</tr>
+
+				<tr valign="top">
+					<th scope="row">API key</th>
+					<td><input type="text" name="custory_api_key" class="regular-text code" id="custory_api_key_id"
+							   value="<?php echo get_option('custory_api_key'); ?>"
+							   onkeypress="return checkAPIKey(event);" onblur="return checkAPIKey(event);"/>
+						<img id="process_id_usr" class="process_check" 
+							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>" 
+							 alt="process indicator" />
+						<label id="check_result_usr" class="check_result"></label>
+					</td>
+				</tr>
+
+			</table>
+		</div>
+		<div id="cu-story_secondsettings_container" <?php echo get_option('custory_api_key') == '' ? 'hidden':'' ?> >
+		<div class="section">
+			<h3 class="itemtitle">stori.es Collection Synchronization</h3>
+			<table class="form-table">
+				<tr valign="top">
+					<th scope="row">Collection</th>
+					<td>
+						<input type="text" name="custory_collection_id"
+								value="<?php echo get_option('custory_collection_id'); ?>" 
+								onkeypress="return checkInput(event);" onblur="return checkInput(event);"/>
+						<img id="process_ind_id" class="process_check" src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>" alt="process indicator" />
+						<label id="check_result" class="check_result"></label>
+						<p class="description" id="tagline-description">Collection ID
+							from stori.es site.</p></td>
+				</tr>
+
+				<tr valign="top">
+					<th scope="row">Enable Story Activation?</th>
+					<td><input type="hidden" value="off"
+						name="custory_story_activation" /> <input type="checkbox"
+						name="custory_story_activation"<?php
+						if(get_option('custory_story_activation') == 'on') echo "
+						checked='checked'" ?> /></td>
+				</tr>
+
+				<tr valign="top">
+					<th scope="row">Story Activation URL</th>
+					<td><span>[TRANSPORT]://<?php echo $tpl_domain; ?>/[PATTERN]?activate=[STORY_ACTIVATION_KEY]</span>
+					<p class="description" id="tagline-description">Please be sure that permalinks enabled.</p>
+						<table class="form-sub-table">
+							<tr valign="top">
+								<th scope="row">TRANSPORT</th>
+								<td><select name="custory_story_transport">
+										<option value="http"<?php
+											if(get_option('custory_story_transport') == "http") echo
+											'SELECTED'; ?> >http</option>
+										<option value="https"<?php
+											if(get_option('custory_story_transport') != "http") echo
+											'SELECTED'; ?> >https</option>
+								</select></td>
+							</tr>
+							<tr valign="top">
+								<th scope="row">PATTERN</th>
+								<td><input type="text" name="custory_story_pattern"
+									value="<?php echo get_option('custory_story_pattern'); ?>"
+									readonly="readonly" /></td>
+							</tr>
+						</table></td>
+				</tr>
+
+			</table>
+		</div>
+		<div class="section">
+			<h3 class="itemtitle">Data Mapping: stori.es Profile to
+				WordPress User</h3>
+			<table class="form-table">
+				<tr valign="top">
+					<th scope="row">Create Users</th>
+					<td><input type="checkbox" name="custory_create_users"<?php
+						if(get_option('custory_create_users') == 'on') echo "
+						checked='checked'" ?> disabled="disabled" /></td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">WordPress Role</th>
+					<td><input type="text" name="custory_story_storyteller"
+						value="<?php echo get_option('custory_story_storyteller'); ?>"
+						readonly="readonly" /></td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Data Mapping</th>
+					<td>
+						<table class="form-sub-table-mapping">
+							<tr valign="top">
+								<th scope="row">stori.es Profile</th>
+								<th scope="row">WordPress User</th>
+								<th scope="row">Notes</th>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Role</td>
+								<td scope="row">Plugin Configuration Setting: “Storyteller”</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">First Name</td>
+								<td scope="row">First Name</td>
+								<td scope="row">&nbsp;</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">City</td>
+								<td scope="row">Last Name</td>
+								<td scope="row">“of [City], [State]”</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">State</td>
+								<td scope="row">Last Name</td>
+								<td scope="row">“of [City], [State]”</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">Email Address</td>
+								<td scope="row">Email Address</td>
+								<td scope="row">&nbsp;</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">Email Address</td>
+								<td scope="row">Username</td>
+								<td scope="row">&nbsp;</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Password</td>
+								<td scope="row">Generated; by wp_generate_password</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">Email Address</td>
+								<td scope="row">Nickname</td>
+								<td scope="row">&nbsp;</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Display Name</td>
+								<td scope="row">[WP First Name] [WP Last Name]</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Email Preferences - Receive Post or Page
+									Notification Emails</td>
+								<td scope="row">Enable users to receive notifications about
+									comments on their Posts</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div class="section">
+			<h3 class="itemtitle">Data Mapping: stori.es Story to WordPress
+				(Custom) Post</h3>
+			<table class="form-table">
+				<tr valign="top">
+					<th scope="row">Post Type</th>
+					<td><input type="text" name="custory_post_type"
+						value="<?php echo get_option('custory_post_type'); ?>"
+						readonly="readonly" /></td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Post Category</th>
+					<td><input type="text" name="custory_post_category"
+						value="<?php echo get_option('custory_post_category'); ?>" /></td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Tags</th>
+					<td><input type="text" name="custory_post_tags"
+						value="<?php echo get_option('custory_post_tags'); ?>" /></td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Enabling Comments</th>
+					<td><input type="hidden" value="off" name="custory_post_comments" /> 
+						<input type="checkbox" name="custory_post_comments"<?php
+						if(get_option('custory_post_comments') == 'on') echo "
+						checked='checked'" ?> /></td>
+				</tr>
+				<tr valign="top">
+					<th scope="row">Data Mapping</th>
+					<td>
+						<table class="form-sub-table-mapping">
+							<tr valign="top">
+								<th scope="row">stori.es Story</th>
+								<th scope="row">WordPress Post</th>
+								<th scope="row">Notes</th>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Author</td>
+								<td scope="row">WordPress User</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">Content Document - Title</td>
+								<td scope="row">Title</td>
+								<td scope="row">If untitled, set title as “Untitled”</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Permalink</td>
+								<td scope="row">Generated from Title</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">Story ID</td>
+								<td scope="row">Body</td>
+								<td scope="row">stori.es Shortcode</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Category</td>
+								<td scope="row">Plugin Configuration Setting: “Robocalls”</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Tags</td>
+								<td scope="row">Plugin Configuration Setting: “robocalls”</td>
+							</tr>
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Comments</td>
+								<td scope="row">Plugin Configuration Setting: enabled</td>
+							</tr>
+							
+							<!-- Commented until clarification from Jon how it should be used
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">http/https</td>
+								<td scope="row">Plugin Configuration Setting: https</td>
+							</tr>
+							-->
+							
+							<tr valign="top">
+								<td scope="row">&nbsp;</td>
+								<td scope="row">Publication Status</td>
+								<td scope="row">Plugin Configuration Setting: published</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div class="section">
+			<h3 class="itemtitle">Synchronization Controls</h3>
+			<table class="form-table">
+				<tr valign="top">
+					<th scope="row">Refresh Rate</th>
+					<td><select id="custory_refresh_rate_id" name="custory_refresh_rate">
+							<option value="<?php echo get_option('custory_refresh_rate') ?>"
+								SELECTED>
+								<?php echo get_option('custory_refresh_rate'); ?>
+							</option>
+					</select>
+					<p class="description" id="tagline-description">Current state - <span id="sync_state"><?php echo get_option('custory_create_event_status') ?></span></p>
+					</td>
+				</tr>
+				<tr valign="top">
+					<td><input type="button" class="button button-secondary"
+						name="custory_synch_start" value="Start" onclick="actionStartSync();"/> &nbsp; 
+						<input type="button" class="button button-secondary"
+						name="custory_synch_stop" value="Stop" onclick="actionStopSync();"/>
+					</td>
+				</tr>
+			</table>
+		</div>
+		</div>
+		<p class="submit">
+			<input type="submit" class="button-primary"
+				value="<?php _e('Save Changes') ?>" />
+		</p>
+		<input type="hidden" name="action" value="update" /> <input
+			type="hidden" name="page_options"
+			value="new_option_name,some_other_option,option_etc" />
+	</form>
+</body>
+</html>
