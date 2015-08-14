@@ -17,7 +17,6 @@
 if (! defined ( 'ABSPATH' ))
 	exit (); // Exit if accessed directly
 
-
 global $wpdb;
 
 define ( 'CU_STORIES_DIR', plugin_dir_path ( __FILE__ ) );
@@ -29,7 +28,7 @@ $HttpHeaders = array( 'Accept: application/json',
 					  'Authorization: BASIC '. strtoupper(get_option('custory_api_key')),
 					  'Cache-Control: no-cache');
 
-if (isset ( $_POST ["action"] ) && trim ( $_POST ["action"] ) == "update") {
+if (trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim ( $_POST ["action"] ) == "update") {
 	$options_array = array ();
 	
 	foreach ( $_POST as $key => $value ) {
