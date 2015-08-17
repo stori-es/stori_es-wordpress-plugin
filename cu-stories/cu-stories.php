@@ -893,7 +893,7 @@ function cu_stories_uninstall() {
 		$count = $wpdb->get_var( "SELECT COUNT(*) FROM " . CU_STORIES_TABLE );
 	}
 	
-	$wpdb->query( "DROP TABLE IF_EXISTS " . CU_STORIES_TABLE );
+	$wpdb->query( "DROP TABLE IF EXISTS " . CU_STORIES_TABLE );
 
 	delete_option("custory_api_user");
 	delete_option("custory_api_key");
