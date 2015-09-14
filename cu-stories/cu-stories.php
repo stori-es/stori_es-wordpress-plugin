@@ -93,21 +93,20 @@ function cu_stories_ctrl_sync_callback(){
 	
 	if($_POST['state'] == 'start'){
 		if(isset($_POST['time'])){
-			// create correct timestamp and schedule synchronization
 			$is_scheduled = wp_next_scheduled ( 'cu_daily_event' );
 			if(!empty($is_scheduled)) wp_clear_scheduled_hook ( 'cu_daily_event' );
 			
 			// create correct timestamp and schedule synchronization
-				$cstDateTime = new DateTime ( date ( "Y-m-d" ) . " " . substr($_POST['time'], 0, -4), new DateTimeZone ( "CST" ) );
-				wp_schedule_event ( $cstDateTime->getTimestamp (), 'daily', 'cu_daily_event' );
-				$is_scheduled = wp_next_scheduled ( 'cu_daily_event' );
-				
-				if($is_scheduled){
-					update_option("custory_create_event_status","Scheduled");
-					update_option("custory_refresh_rate",$_POST['time']);
-				}
-				
-				$result = (empty($is_scheduled) ? 'ERROR' : 'SUCCESS');
+			$cstDateTime = new DateTime ( date ( "Y-m-d" ) . " " . substr($_POST['time'], 0, -4), new DateTimeZone ( "CST" ) );
+			wp_schedule_event ( $cstDateTime->getTimestamp (), 'daily', 'cu_daily_event' );
+			$is_scheduled = wp_next_scheduled ( 'cu_daily_event' );
+			
+			if($is_scheduled){
+				update_option("custory_create_event_status","Scheduled");
+				update_option("custory_refresh_rate",$_POST['time']);
+			}
+			
+			$result = (empty($is_scheduled) ? 'ERROR' : 'SUCCESS');
 		}
 	}else{
 		wp_clear_scheduled_hook ( 'cu_daily_event' );
@@ -156,12 +155,13 @@ function cu_stories_notify_author($comment_ID, $comment_status) {
 
 add_action( 'wp_ajax_validate_api_key', 'cu_stories_validate_apikey_callback' );
 function cu_stories_validate_apikey_callback() {
-	global $CurlRequest, $HttpHeaders;
+	global $HttpHeaders;
 	
 	$lHttpHeaders = $HttpHeaders;
 	$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
 
 	//get story json based on passed to shortcode story id
+	$CurlRequest = new CurlRequest ();
 	$CurlRequest->setHttpHeaders($lHttpHeaders);
 	$CurlRequest->createCurl ( CU_STORIES_API_URL . 'users/self' );
 	$objUser = json_decode($CurlRequest->getContent());
@@ -172,9 +172,10 @@ function cu_stories_validate_apikey_callback() {
 
 add_action( 'wp_ajax_validate_collection', 'cu_stories_validate_collection_callback' );
 function cu_stories_validate_collection_callback() {
-	global $CurlRequest, $HttpHeaders;
+	global $HttpHeaders;
 	
 	//get story json based on passed to shortcode story id
+	$CurlRequest = new CurlRequest ();
 	$CurlRequest->setHttpHeaders($HttpHeaders);		
 	$CurlRequest->createCurl ( CU_STORIES_API_URL . 'collections/' . $_POST['collection_id'] );
 	$objCollection = json_decode($CurlRequest->getContent());
@@ -185,7 +186,7 @@ function cu_stories_validate_collection_callback() {
 
 add_action( 'template_redirect', 'cu_stories_story_activation_redirect' );
 function cu_stories_story_activation_redirect($do_redirect) {
-	global $wpdb, $CurlRequest, $HttpHeaders;
+	global $wpdb, $HttpHeaders;
 	
 	$pattern = get_option("custory_story_pattern"); 
 	$collection = get_option('custory_collection_id');
@@ -213,10 +214,6 @@ function cu_stories_story_activation_redirect($do_redirect) {
 				
 				$post_link = get_post_permalink($dataRow["swp_post_id"]);
 				
-				
-/*	Uncomment when POST processign API will be fixed by stori.es (https://consumersunion.atlassian.net/browse/TASK-1752)
- *  testing and debugging required
- *  
 				$estDateTime = new DateTime ( "now", new DateTimeZone ( "EST" ) );
 				
 				//send POST request to stori.es site to mark story activated
@@ -226,27 +223,15 @@ function cu_stories_story_activation_redirect($do_redirect) {
 				$objDocumentPost = new stdClass();
 				$objDocumentPost->document_type="AttachmentDocument";
 				$objDocumentPost->title="Activated and deployed to {$_SERVER['SERVER_NAME']} ({$estDateTime->format('Y-m-d\TH:i:s\Z')})";
-				$objDocumentPost->byline="";
-				$objDocumentPost->blocks = array();
+				$objDocumentPost->source = $post_link;
+				$objDocumentPost->entity_id = $dataRow["swp_story_id"];
 				
-				$objBlock = new stdClass();
-				$objBlock->block_type = "AttachmentsQuestionBlock";
-				$objBlock->value = $post_link;
-				$objBlock->collection = new stdClass();
-				$objBlock->collection->href = "https://y.stori.es/api/collections/{$collection}";
-				$objBlock->story = new stdClass();
-				$objBlock->story->href = $dataRow["swp_story_href"];
-				$objDocumentPost->blocks[] = $objBlock;
-				
-				$objDocumentPost->entity_id = 0;
-				$objDocumentPost->theme_id = 0;
-				$objDocumentPost->permission_id = 0;
-				
+				$CurlRequest = new CurlRequest ();
 				$CurlRequest->setHttpHeaders($locHttpHeaders);
 				$CurlRequest->setPost (json_encode($objDocumentPost));
 				$CurlRequest->createCurl ( CU_STORIES_API_URL . 'documents' );
 				$objResponse = json_decode($CurlRequest->getContent());
-*/
+				
 				if($do_redirect === ""){
 					wp_redirect($post_link);
 					die ();
@@ -318,17 +303,10 @@ function cu_stories_synchronization() {
 		
 		
 		//get and store locally all stories which available on site.
-		$arrLocalStoriesSet = $wpdb->get_results( 'SELECT swp_story_id, swp_post_id FROM wp_stories', OBJECT_K );
+		$arrLocalStoriesSet = $wpdb->get_results( 'SELECT swp_story_id, swp_post_id FROM ' . CU_STORIES_TABLE, OBJECT_K );
 		
 		//set headers for future requests to stori.es
-		// Uncomment string below when issue with headers will be fixed(https://consumersunion.atlassian.net/browse/TASK-1792)
-		//$CurlRequest->setHttpHeaders($HttpHeaders);
-		
-/* temproary implementation start, delete after issue with headers (see above) will be fixed */
-		$lHttpHeaders = $HttpHeaders;
-		$lHttpHeaders[1] = "Authorization: BASIC 8A093954-3A66-4286-B2FC-8F85B7AD2DF5";
-		$CurlRequest->setHttpHeaders($lHttpHeaders);
-/* temproary implementation end*/
+		$CurlRequest->setHttpHeaders($HttpHeaders);
 		
 		//get collection object
 		$CurlRequest->createCurl ( CU_STORIES_API_URL . 'collections/' . get_option('custory_collection_id') );
@@ -382,7 +360,8 @@ function cu_stories_synchronization() {
 						$cu_story_user["user_firstname"] = "";
 						$cu_story_user["user_lastname"] = "";
 							
-						$StoryOwnerUrl = $objStory->stories[0]->links->owner->href . "?organization_context=551295";
+						//$StoryOwnerUrl = $objStory->stories[0]->links->owner->href . "?organization_context=551295";
+						$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 						$CurlRequest->createCurl ( $StoryOwnerUrl );
 						$objStoryOwner = json_decode($CurlRequest->getContent());
 							
@@ -618,13 +597,6 @@ function cu_stories_synchronization() {
 			$body .= "</tr>";
 		}
 		$body .= "</table><br/><br/>";
-		
-		$body .= "=====================================================================<br/>";
-		$body .= "==================== Data dump of errors array ======================<br/>";
-		$body .= print_r($arrErrors, true). "<br/>";
-		$body .= "=====================================================================<br/>";
-		
-		//file with mails located at "less /var/mail/www-data"
 		wp_mail( $to, $subject, $body, $headers );
 	}
 	return true;
