@@ -18,7 +18,7 @@
 
 				<tr valign="top">
 					<th scope="row">API User</th>
-					<td><input type="text" name="custory_api_user" class="regular-text code" 
+					<td><input type="text" name="custory_api_user" class="regular-text code"
 							   value="<?php echo get_option('custory_api_user'); ?>" /></td>
 				</tr>
 
@@ -27,8 +27,8 @@
 					<td><input type="text" name="custory_api_key" class="regular-text code" id="custory_api_key_id"
 							   value="<?php echo get_option('custory_api_key'); ?>"
 							   onkeypress="return checkAPIKey(event);" onblur="return checkAPIKey(event);"/>
-						<img id="process_id_usr" class="process_check" 
-							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>" 
+						<img id="process_id_usr" class="process_check"
+							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>"
 							 alt="process indicator" />
 						<label id="check_result_usr" class="check_result"></label>
 					</td>
@@ -44,7 +44,7 @@
 					<th scope="row">Collection</th>
 					<td>
 						<input type="text" name="custory_collection_id"
-								value="<?php echo get_option('custory_collection_id'); ?>" 
+								value="<?php echo get_option('custory_collection_id'); ?>"
 								onkeypress="return checkInput(event);" onblur="return checkInput(event);"/>
 						<img id="process_ind_id" class="process_check" src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>" alt="process indicator" />
 						<label id="check_result" class="check_result"></label>
@@ -179,8 +179,8 @@
 						value="<?php echo get_option('custory_post_tags'); ?>" /></td>
 				</tr>
 				<tr valign="top">
-					<th scope="row">Enabling Comments</th>
-					<td><input type="hidden" value="off" name="custory_post_comments" /> 
+					<th scope="row">Enable Comments</th>
+					<td><input type="hidden" value="off" name="custory_post_comments" />
 						<input type="checkbox" name="custory_post_comments"<?php
 						if(get_option('custory_post_comments') == 'on') echo "
 						checked='checked'" ?> /></td>
@@ -246,7 +246,7 @@
 				</tr>
 				<tr valign="top">
 					<td><input type="button" class="button button-secondary"
-						name="custory_synch_start" value="Start" onclick="actionStartSync();"/> &nbsp; 
+						name="custory_synch_start" value="Start" onclick="actionStartSync();"/> &nbsp;
 						<input type="button" class="button button-secondary"
 						name="custory_synch_stop" value="Stop" onclick="actionStopSync();"/>
 					</td>
