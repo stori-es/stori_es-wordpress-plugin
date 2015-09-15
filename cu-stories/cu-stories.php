@@ -58,7 +58,7 @@ if (trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim
 	}
 
 	cu_stories_set_options ( $options_array );
-	header ( "Location: " . get_site_url () . "/wp-admin/edit.php?post_type=custory&page=cu-stories-general-settings" );
+	header ( "Location: " . get_site_url () . "/wp-admin/edit.php?post_type=custory&page=cu-stories-settings" );
 	die ();
 }
 
@@ -938,7 +938,7 @@ function cu_stories_register_custom_post() {
 }
 
 function cu_stories_menu() {
-	add_submenu_page ( 'edit.php?post_type=custory', 'General settings', 'General settings', 'manage_options', 'cu-stories-general-settings', 'cu_stories_view_general_settings' );
+	add_submenu_page ( 'edit.php?post_type=custory', 'Settings', 'Settings', 'manage_options', 'cu-stories-settings', 'cu_stories_view_settings' );
 	add_submenu_page ( 'edit.php?post_type=custory', 'Export', 'Export', 'manage_options', 'cu-stories-export', 'cu_stories_view_export' );
 }
 
@@ -950,11 +950,11 @@ function cu_stories_view_export() {
 	return true;
 }
 
-function cu_stories_view_general_settings() {
+function cu_stories_view_settings() {
 	/* These parameters available in template as php variable */
 	$tpl_domain = str_replace ( "http://", "", home_url() );
 
-	include_once CU_STORIES_DIR . 'includes/tpl/general-settings.html';
+	include_once CU_STORIES_DIR . 'includes/tpl/settings.html';
 }
 
 add_action ( 'init', 'cu_stories_register_custom_post' );

@@ -1,23 +1,23 @@
 === Stories ===
-Contributors: 
-Donate link: 
+Contributors: Sound Strategies, Consumer Reports
+Donate link:
 Tags: stories
 Requires at least:  4.2.1
 Tested up to:  4.2.1
 Stable tag: trunk
 
-Stories is a WordPress plugin to provide syncronization with stori.es site.
+The stori.es WordPress Plugin enables access to content hosted on the stori.es platform.
 
 == Description ==
 
-Stories plugin provides ability for your WordPress blog to show stories from stori.es site for some specific collection which you have defined.
-Also you can export data of stories owners in CSV file (User Email, Activation Key) for manual activation requests. 
+The stori.es WordPress Plugin enables display of content hosted on the stori.es platform.  Use a general purpose shortcode to dynamically pull in content or specify a collection to pull into WordPress.
+Storytellers can opt-in to display of their content on your site through a Story Activation URL.  Administrators export the URLs as a CSV file (User Email, Activation Key) for distribution to Storytellers via email or other external notification mechanisms.
 
 == Installation ==
 
 1. Upload plugin folder (cu-stories) to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Go to plugin settings "Stories -> General settings" to set up information for syncronization.
+3. Go to plugin settings "Stories -> Settings" to configure the plugin.
 
 == Changelog ==
 
