@@ -7,7 +7,7 @@
 <body>
 	<form method="post" id="post_form_id">
 		<?php wp_nonce_field('update-options'); ?>
-		<h2>Consumers Union plugin general settings</h2>
+		<h2>stori.es WordPress Plugin - Settings</h2>
 		<p class="submit">
 			<input type="submit" class="button-primary"
 				value="<?php _e('Save Changes') ?>" />
@@ -23,7 +23,7 @@
 				</tr>
 
 				<tr valign="top">
-					<th scope="row">API key</th>
+					<th scope="row">API Key</th>
 					<td><input type="text" name="custory_api_key" class="regular-text code" id="custory_api_key_id"
 							   value="<?php echo get_option('custory_api_key'); ?>"
 							   onkeypress="return checkAPIKey(event);" onblur="return checkAPIKey(event);"/>
@@ -48,8 +48,8 @@
 								onkeypress="return checkInput(event);" onblur="return checkInput(event);"/>
 						<img id="process_ind_id" class="process_check" src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>" alt="process indicator" />
 						<label id="check_result" class="check_result"></label>
-						<p class="description" id="tagline-description">Collection ID
-							from stori.es site.</p></td>
+						<p class="description" id="tagline-description">Collection ID from stori.es site</p>
+					</td>
 				</tr>
 
 				<tr valign="top">
@@ -64,7 +64,7 @@
 				<tr valign="top">
 					<th scope="row">Story Activation URL</th>
 					<td><span>[TRANSPORT]://<?php echo $tpl_domain; ?>/[PATTERN]?activate=[STORY_ACTIVATION_KEY]</span>
-					<p class="description" id="tagline-description">Please be sure that permalinks enabled.</p>
+					<p class="description" id="tagline-description">Please be sure that permalinks are enabled</p>
 						<table class="form-sub-table">
 							<tr valign="top">
 								<th scope="row">TRANSPORT</th>
