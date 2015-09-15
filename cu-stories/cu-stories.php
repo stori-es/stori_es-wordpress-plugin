@@ -1,13 +1,13 @@
 <?php
 /**
- * @package Customer Union Stories
+ * @package stori.es WordPress Plugin
  * @version 1.0
  */
 
 /*
- * Plugin Name: Customer Union Stories
- * Plugin URI: 
- * Description: This application will house stories that were submitted by consumers.
+ * Plugin Name: stori.es WordPress Plugin
+ * Plugin URI:
+ * Description: Enables access to content hosted on the stori.es platform.
  * Version: 1.0
  * Author: Sound Strategies Inc.
  * Author URI: http://soundst.com
@@ -30,14 +30,14 @@ $HttpHeaders = array( 'Accept: application/json',
 
 if (trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim ( $_POST ["action"] ) == "update") {
 	$options_array = array ();
-	
+
 	foreach ( $_POST as $key => $value ) {
 		// for now we need to skip update of locked form fields
 		if(in_array($key, array("custory_story_pattern", "custory_story_storyteller", "custory_post_type")))
 			continue;
-		
+
 		if($key == "custory_post_category" && trim($_POST[$key]) != get_option("custory_post_category")){
-			
+
 			$category = get_option('custory_post_category');
 			$term_id = term_exists($category, 'category');
 			$post_category = wp_strip_all_tags(trim($_POST[$key]));
@@ -51,12 +51,12 @@ if (trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim
 				));
 			}
 		}
-		
+
 		if (strpos ( $key, "custory" ) === 0) {
 			$options_array [$key] = $value;
 		}
 	}
-	
+
 	cu_stories_set_options ( $options_array );
 	header ( "Location: " . get_site_url () . "/wp-admin/edit.php?post_type=custory&page=cu-stories-general-settings" );
 	die ();
@@ -72,54 +72,54 @@ register_deactivation_hook ( __FILE__, 'cu_stories_deactivation' );
  * *******************************************************************************************************
  *
  * Editable code section
- *  
+ *
  * ********************************************************************************************************
  */
 
 function cu_stories_generate_key(){
 	global $wpdb;
-	
+
 	do {
 		$StoryActivationKey = wp_generate_password(32,false,false);
 		$query = "SELECT COUNT(*) FROM " . CU_STORIES_TABLE . " WHERE swp_activation_key = {$StoryActivationKey}";
 	} while ($wpdb->get_var( $query ) != 0);
-	
-	return $StoryActivationKey;	
+
+	return $StoryActivationKey;
 }
 
 add_action( 'wp_ajax_ctrl_sync', 'cu_stories_ctrl_sync_callback' );
 function cu_stories_ctrl_sync_callback(){
 	$result = "";
-	
+
 	if($_POST['state'] == 'start'){
 		if(isset($_POST['time'])){
 			$is_scheduled = wp_next_scheduled ( 'cu_daily_event' );
 			if(!empty($is_scheduled)) wp_clear_scheduled_hook ( 'cu_daily_event' );
-			
+
 			// create correct timestamp and schedule synchronization
 			$cstDateTime = new DateTime ( date ( "Y-m-d" ) . " " . substr($_POST['time'], 0, -4), new DateTimeZone ( "CST" ) );
 			wp_schedule_event ( $cstDateTime->getTimestamp (), 'daily', 'cu_daily_event' );
 			$is_scheduled = wp_next_scheduled ( 'cu_daily_event' );
-			
+
 			if($is_scheduled){
 				update_option("custory_create_event_status","Scheduled");
 				update_option("custory_refresh_rate",$_POST['time']);
 			}
-			
+
 			$result = (empty($is_scheduled) ? 'ERROR' : 'SUCCESS');
 		}
 	}else{
 		wp_clear_scheduled_hook ( 'cu_daily_event' );
 		$is_scheduled = wp_next_scheduled ( 'cu_daily_event' );
-		
+
 		if(empty($is_scheduled)){
 			update_option("custory_refresh_rate","");
 			update_option("custory_create_event_status","Unscheduled");
 		}
-		
+
 		$result = (empty($is_scheduled) ? 'SUCCESS' : 'ERROR');
 	}
-	
+
 	echo $result;
 	wp_die();
 
@@ -128,9 +128,9 @@ function cu_stories_ctrl_sync_callback(){
 add_action( 'delete_post', 'cu_stories_internal_stories_sync', 10 );
 function cu_stories_internal_stories_sync( $pid ) {
 	global $wpdb;
- 
+
 	$query = $wpdb->prepare( 'SELECT swp_id FROM ' . CU_STORIES_TABLE . ' WHERE swp_post_id = %d', $pid );
-	
+
 	if ( $wpdb->get_var( $query ) ) {
 		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . CU_STORIES_TABLE . ' WHERE swp_post_id = %d', $pid ) );
 	}
@@ -141,7 +141,7 @@ function cu_stories_internal_stories_sync( $pid ) {
 add_action('comment_post', 'cu_stories_notify_author',11,2);
 function cu_stories_notify_author($comment_ID, $comment_status) {
 	global $wpdb;
-	
+
 	if($comment_status === 1){
 		$commentdata=&get_comment($comment_ID, ARRAY_A);
 		if(isset($commentdata['comment_post_ID'])){
@@ -156,7 +156,7 @@ function cu_stories_notify_author($comment_ID, $comment_status) {
 add_action( 'wp_ajax_validate_api_key', 'cu_stories_validate_apikey_callback' );
 function cu_stories_validate_apikey_callback() {
 	global $HttpHeaders;
-	
+
 	$lHttpHeaders = $HttpHeaders;
 	$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
 
@@ -173,10 +173,10 @@ function cu_stories_validate_apikey_callback() {
 add_action( 'wp_ajax_validate_collection', 'cu_stories_validate_collection_callback' );
 function cu_stories_validate_collection_callback() {
 	global $HttpHeaders;
-	
+
 	//get story json based on passed to shortcode story id
 	$CurlRequest = new CurlRequest ();
-	$CurlRequest->setHttpHeaders($HttpHeaders);		
+	$CurlRequest->setHttpHeaders($HttpHeaders);
 	$CurlRequest->createCurl ( CU_STORIES_API_URL . 'collections/' . $_POST['collection_id'] );
 	$objCollection = json_decode($CurlRequest->getContent());
 
@@ -187,51 +187,51 @@ function cu_stories_validate_collection_callback() {
 add_action( 'template_redirect', 'cu_stories_story_activation_redirect' );
 function cu_stories_story_activation_redirect($do_redirect) {
 	global $wpdb, $HttpHeaders;
-	
-	$pattern = get_option("custory_story_pattern"); 
+
+	$pattern = get_option("custory_story_pattern");
 	$collection = get_option('custory_collection_id');
-	
+
 	if(!empty($pattern) && !empty($collection)){
 		if(isset($_GET["activate"]) && isset($_GET["start"])){
 			$StoryActivationKey = $_GET["activate"];
-			
+
 			$dataRow = $wpdb->get_row("SELECT * FROM " . CU_STORIES_TABLE . " WHERE swp_activation_key = '{$StoryActivationKey}'", ARRAY_A);
-			
+
 			if(isset($dataRow["swp_post_id"])){
 				$story_post = array(
 						'ID'           => $dataRow["swp_post_id"],
 						'post_status'  => 'publish',
 				);
-			
+
 				// Update the post into the database
 				wp_update_post( $story_post );
-				
+
 				//update wp_story custom table with activation timestamp
 				$wpdb->query("UPDATE " . CU_STORIES_TABLE . "
 					  SET swp_activation_timestamp = CURRENT_TIMESTAMP
 					  WHERE swp_post_id = " . $dataRow["swp_post_id"]
 				);
-				
+
 				$post_link = get_post_permalink($dataRow["swp_post_id"]);
-				
+
 				$estDateTime = new DateTime ( "now", new DateTimeZone ( "EST" ) );
-				
+
 				//send POST request to stori.es site to mark story activated
 				$locHttpHeaders = $HttpHeaders;
 				$locHttpHeaders[0] = "Content-Type: application/json";
-				
+
 				$objDocumentPost = new stdClass();
 				$objDocumentPost->document_type="AttachmentDocument";
 				$objDocumentPost->title="Activated and deployed to {$_SERVER['SERVER_NAME']} ({$estDateTime->format('Y-m-d\TH:i:s\Z')})";
 				$objDocumentPost->source = $post_link;
 				$objDocumentPost->entity_id = $dataRow["swp_story_id"];
-				
+
 				$CurlRequest = new CurlRequest ();
 				$CurlRequest->setHttpHeaders($locHttpHeaders);
 				$CurlRequest->setPost (json_encode($objDocumentPost));
 				$CurlRequest->createCurl ( CU_STORIES_API_URL . 'documents' );
 				$objResponse = json_decode($CurlRequest->getContent());
-				
+
 				if($do_redirect === ""){
 					wp_redirect($post_link);
 					die ();
@@ -253,46 +253,46 @@ function cu_stories_set_options($options_array) {
 add_shortcode ( 'stori.es', 'cu_stories_get_story' );
 function cu_stories_get_story($atts) {
 	global $CurlRequest, $HttpHeaders;
-	
+
 	$params = shortcode_atts ( array('id' => '', 'resource' => 'story' ), $atts );
 	$result = "";
 
 	//get story json based on passed to shortcode story id
 	$CurlRequest->setHttpHeaders($HttpHeaders);
 	$CurlRequest->createCurl ( CU_STORIES_API_URL . 'stories/' . $params['id'] );
-	
+
 	$objStory = json_decode($CurlRequest->getContent());
-	
+
 	if($objStory->meta->status == 'SUCCESS'){
 		//get story document content
 		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
 		$CurlRequest->createCurl ( $DocumentUrl );
 		$objDocument = json_decode( $CurlRequest->getContent() );
-		
+
 		foreach ($objDocument->documents[0]->blocks as $key=>$block){
 			if($block->block_type == 'TextContentBlock'){
 				$result .= $block->value;
 			}
 		}
 	}
-	
+
 	return $result;
 }
 
 add_action ( 'cu_daily_event', 'cu_stories_synchronization' );
 function cu_stories_synchronization() {
 	global $CurlRequest, $HttpHeaders, $wpdb;
-	
+
 	if(get_option('custory_api_key') !== "" && get_option('custory_collection_id') != ""){
 		$arrErrors = array();
-		
+
 		$cu_story_user = array(
 				'user_login'    => "",
 				'user_firstname'    => "",
 				'user_lastname'    => "",
 				'user_email'    => "",
 		);
-		
+
 		$cu_story_post = array(
 				'post_title'    => "",
 				'post_content'  => "",
@@ -300,36 +300,36 @@ function cu_stories_synchronization() {
 				'post_author'   => 0,
 				'post_category' => array()
 		);
-		
-		
+
+
 		//get and store locally all stories which available on site.
 		$arrLocalStoriesSet = $wpdb->get_results( 'SELECT swp_story_id, swp_post_id FROM ' . CU_STORIES_TABLE, OBJECT_K );
-		
+
 		//set headers for future requests to stori.es
 		$CurlRequest->setHttpHeaders($HttpHeaders);
-		
+
 		//get collection object
 		$CurlRequest->createCurl ( CU_STORIES_API_URL . 'collections/' . get_option('custory_collection_id') );
 		$objCollection = json_decode($CurlRequest->getContent());
-		
+
 		if($objCollection->meta->status == 'SUCCESS'){
-			
+
 			$CurlRequest->setHttpHeaders($HttpHeaders); // TEST DELETE ON LIVE when issue with headers will be fixed on stori.es side
-			
-			//cycle through all collection stories			
-			$arrStories = $objCollection->collections[0]->links->stories; 
+
+			//cycle through all collection stories
+			$arrStories = $objCollection->collections[0]->links->stories;
 			foreach($arrStories as $key=>$story){
 				$CurlRequest->createCurl ( $story->href );
 				$objStory = json_decode($CurlRequest->getContent());
-					
+
 				if($objStory->meta->status == 'SUCCESS'){
 					$story_id = end(explode("/", $objStory->meta->self));
-							
+
 					//get default_content story document content
 					$DocumentUrl = $objStory->stories[0]->links->default_content->href;
 					$CurlRequest->createCurl ( $DocumentUrl );
 					$objDocument = json_decode( $CurlRequest->getContent() );
-					
+
 					if($objDocument->meta->status == 'SUCCESS'){
 						//default_content title
 						if(isset($objDocument->documents[0]->title)){
@@ -337,16 +337,16 @@ function cu_stories_synchronization() {
 						}else{
 							$cu_story_post["post_title"] = "Untitled";
 						}
-						
-						$cu_story_post["post_content"] = '[stori.es resource="resource" id="' . $story_id . '"]';						
-						
+
+						$cu_story_post["post_content"] = '[stori.es resource="resource" id="' . $story_id . '"]';
+
 						//get response document email
 						$cu_story_user["user_email"] = "";
-							
+
 						$ResponseDocumentUrl = $objStory->stories[0]->links->responses[0]->href;
 						$CurlRequest->createCurl ( $ResponseDocumentUrl );
 						$objResponseDocument = json_decode($CurlRequest->getContent());
-							
+
 						if($objResponseDocument->meta->status == 'SUCCESS'){
 							foreach ($objResponseDocument->documents[0]->blocks as $key=>$block){
 								if($block->block_type == 'EmailQuestionBlock'){
@@ -354,31 +354,31 @@ function cu_stories_synchronization() {
 								}
 							}
 						}
-							
+
 						//Storyteller information
 						$cu_story_user["user_login"] = "";
 						$cu_story_user["user_firstname"] = "";
 						$cu_story_user["user_lastname"] = "";
-							
+
 						//$StoryOwnerUrl = $objStory->stories[0]->links->owner->href . "?organization_context=551295";
 						$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 						$CurlRequest->createCurl ( $StoryOwnerUrl );
 						$objStoryOwner = json_decode($CurlRequest->getContent());
-							
+
 						if($objStoryOwner->meta->status == 'SUCCESS'){
 							$cu_story_user["user_login"] = $objStoryOwner->profiles[0]->id;
 							$cu_story_user["user_firstname"] = $objStoryOwner->profiles[0]->given_name;
-						
+
 							$arrContactData = $objStoryOwner->profiles[0]->contacts;
 							foreach ($arrContactData as $key=>$contact_data){
-									
+
 								if($contact_data->contact_type == "GeolocationContact"){
 									$cu_story_user["user_lastname"] = "of "
 											. ucfirst(strtolower($contact_data->location->city))
 											. ","
 													. strtoupper($contact_data->location->state);
 								}
-									
+
 								if(empty($cu_story_user["user_email"]) && $contact_data->contact_type == "EmailContact"){
 									$cu_story_user["user_email"] = $contact_data->value;
 								}
@@ -392,18 +392,18 @@ function cu_stories_synchronization() {
 									'StoryOwnerUrl' => $StoryOwnerUrl,
 									'CurlHttpStatus' => $CurlRequest->getHttpStatus(),
 									'CurlError' => $CurlRequest->getError()
-						
+
 							);
 						}
-							
+
 						//Generate Story Activation Keys
 						$StoryActivationKey = wp_generate_password(32,false,false);
 						$user_name = (empty($cu_story_user["user_email"]) ? $cu_story_user["user_login"] : $cu_story_user["user_email"]);
-							
+
 						// Create user for story author object
 						$user_id = username_exists( $user_name );
 						$user_id = (empty($user_id) ? email_exists($cu_story_user["user_email"]) : $user_id);
-							
+
 						if ( empty($user_id) ) {
 							$random_password = wp_generate_password( $length=12 );
 							$user_id = wp_create_user( $user_name, $random_password, $cu_story_user["user_email"] );
@@ -438,43 +438,43 @@ function cu_stories_synchronization() {
 								);
 							}
 						}
-							
+
 						if( is_numeric($user_id) ){
 							// get category object
 							$category = get_option('custory_post_category');
 							$category_id = term_exists($category, 'category');
-						
+
 							$post_status = (get_option('custory_story_activation') == "on" ? "publish" : "draft");
 							$post_comments_status = (get_option('custory_post_comments') == "on" ? "open" : "closed");
-						
+
 							if(!empty($category_id)){
-									
+
 								if(array_key_exists($story_id,$arrLocalStoriesSet)){
 									$story_post = array(
 											'ID'           => $arrLocalStoriesSet[$story_id]->swp_post_id,
 											'post_title'   => $cu_story_post["post_title"]
 									);
-						
+
 									// Update the post into the database
 									$post_id = wp_update_post( $story_post, true );
 									if (is_wp_error($post_id)) {
 										$strErrors = "";
 										$errors = $post_id->get_error_messages();
-											
+
 										foreach ($errors as $error) {
 											$strErrors .= $error;
 										}
-											
+
 										$arrErrors[] = array(
 												'ErrorType' => "WPPostUpdate",
 												'objURL' => "",
 												'ErrorMessage' => $strErrors
 										);
 									}
-						
+
 									if( !empty($cu_story_user["user_firstname"]) && !empty($cu_story_user["user_lastname"]) ){
 										$post_author_id = get_post_field( 'post_author', $post_id );
-						
+
 										$user_id = wp_update_user( array(	'ID' => $post_author_id,
 												'first_name' => $cu_story_user["user_firstname"],
 												'last_name' => $cu_story_user["user_lastname"],
@@ -483,7 +483,7 @@ function cu_stories_synchronization() {
 												. $cu_story_user["user_lastname"],
 										) );
 									}
-						
+
 									unset($arrLocalStoriesSet[$story_id]);
 								}else{
 									$cu_story_post = array(
@@ -495,14 +495,14 @@ function cu_stories_synchronization() {
 											'post_type' 	=> "custory",
 											'comment_status'=> $post_comments_status
 									);
-										
+
 									// Insert the post into the database
 									$post_id = wp_insert_post( $cu_story_post );
-										
+
 									// assign tags to post
 									$tags = get_option('custory_post_tags');
 									wp_set_post_tags( $post_id, $tags );
-										
+
 									$wpdb->replace(
 											CU_STORIES_TABLE,
 											array(
@@ -520,7 +520,7 @@ function cu_stories_synchronization() {
 													'%d',
 											)
 									);
-									
+
 									if(get_option('custory_story_activation') == "on"){
 										$_GET["activate"] = $StoryActivationKey;
 										$_GET["start"] = true;
@@ -534,7 +534,7 @@ function cu_stories_synchronization() {
 										'ErrorMessage' => "Post cannot be created, please check that Category exists."
 								);
 							}
-						}						
+						}
 					}else{
 						$arrErrors[] = array(
 								'ErrorType' => "Document",
@@ -545,7 +545,7 @@ function cu_stories_synchronization() {
 								'CurlHttpStatus' => $CurlRequest->getHttpStatus(),
 								'CurlError' => $CurlRequest->getError(),
 								'DefDocStoryId' => $story_id
-								
+
 						);
 					}
 				}else{
@@ -568,7 +568,7 @@ function cu_stories_synchronization() {
 					'ErrorMessage' => $objCollection->meta->messages[0]->summary
 			);
 		}
-		
+
 		//delete all stories which is not in collection
 		foreach($arrLocalStoriesSet as $swp_story_id => $value){
 			cu_stories_delete_story($arrLocalStoriesSet, $swp_story_id);
@@ -586,11 +586,11 @@ function cu_stories_synchronization() {
 		$to = get_bloginfo('admin_email');
 		$subject = 'Customer Union Stories synchronization errors';
 		$headers = array('Content-Type: text/html; charset=UTF-8');
-		
+
 		$body = "<table>";
 		$body .= "<tr><th>Error Type</th><th>Object URL</th><th>Error Message</th></tr>";
 		foreach($arrErrors as $key => $error){
-			$body .= "<tr>"; 
+			$body .= "<tr>";
 			$body .= "<td>".$error["ErrorType"]."</td>";
 			$body .= "<td>".$error["objURL"]."</td>";
 			$body .= "<td>".$error["ErrorMessage"]."</td>";
@@ -604,30 +604,30 @@ function cu_stories_synchronization() {
 
 function cu_stories_delete_story($arrStories, $story_id){
 	global $wpdb;
-	
-	//get stroy post 
+
+	//get stroy post
 	$objPostData = get_post($arrStories[$story_id]->swp_post_id);
 	$post_author_id = $objPostData->post_author;
 	$count = $wpdb->get_var( "SELECT COUNT(*) FROM $wpdb->posts WHERE post_author = {$objPostData->post_author}" );
-	
+
 	if($count == 1)
 		wp_delete_user($post_author_id);
-	
+
 	return true;
 }
 
 function cu_stories_create_db() {
 	global $wpdb;
-	
+
 	$charset_collate = $wpdb->get_charset_collate ();
-	
+
 	$sql = file_get_contents ( CU_STORIES_DIR . "includes/sql/create_table.sql" );
 	$sql = str_replace ( "table_name", CU_STORIES_TABLE, $sql );
 	$sql = str_replace ( "charset_collate", $charset_collate, $sql );
-	
+
 	require_once (ABSPATH . 'wp-admin/includes/upgrade.php');
 	dbDelta ( $sql );
-	
+
 	return true;
 }
 
@@ -645,7 +645,7 @@ function cu_stories_adding_scripts() {
 	wp_enqueue_script ( 'cu-stories-script' );
 
 	//in JavaScript, object properties are accessed as ajax_object.ajax_url, ajax_object.we_value
-	wp_localize_script( 'cu-stories-script', 'ajax_object',	array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );	
+	wp_localize_script( 'cu-stories-script', 'ajax_object',	array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 	wp_localize_script( 'cu-stories-script', 'php_vars',	array( 'api_key' => get_option('custory_api_key'),
 																   'collection_id' => get_option('custory_collection_id'),
 																   'export_script_url' => CU_STORIES_URL . "includes/export.php" ) );
@@ -667,7 +667,7 @@ function cu_stories_adding_public_scripts() {
 add_filter( 'the_posts', 'cu_stories_page_filter' );
 function cu_stories_page_filter( $posts ) {
 	global $wp_query;
-	
+
 	if( $wp_query->get('cu_stories_page_is_called') ) {
 		$posts[0]->post_title = 'Story activation page';
 		$posts[0]->post_content = file_get_contents(CU_STORIES_DIR . 'includes/tpl/story-activation-page.html');
@@ -682,7 +682,7 @@ function cu_stories_query_parser( $q ) {
 	$the_page_name = get_option( "custory_page_name" );
 	$the_page_id = get_option( "custory_page_id" );
 	$the_pattern = get_option( "custory_story_pattern" );
-	
+
 	if(isset($_GET["activate"]) && !isset($_GET["start"]) && $q->query[name] == $the_pattern){
 		$q->set('cu_stories_page_is_called', TRUE );
 		update_option ( "custory_activation_link", get_option('custory_story_transport') . "://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}&start=true" );
@@ -692,27 +692,27 @@ function cu_stories_query_parser( $q ) {
 		}
 	}else{
 		$qv = $q->query_vars;
-		
+
 		if( isset( $q->query_vars['page_id'] ) AND ( intval($q->query_vars['page_id']) == $the_page_id ) ) {
-		
+
 			// Activation page has been called - NO permalinks
 			$q->set('cu_stories_page_is_called', TRUE );
-		
+
 		}
 		elseif( isset( $q->query_vars['pagename'] ) AND ( ($q->query_vars['pagename'] == $the_page_name) OR ($_pos_found = strpos($q->query_vars['pagename'],$the_page_name.'/') === 0) ) ) {
-		
+
 			// Activation page has been called - with permalinks
 			$q->set('cu_stories_page_is_called', TRUE );
-		
+
 		}
 		else {
-		
+
 			// Just a normal WordPress page
 			$q->set('cu_stories_page_is_called', FALSE );
-		
+
 		}
 	}
-	
+
 	return $q;
 }
 
@@ -799,32 +799,32 @@ function cu_stories_activation() {
 			"custory_post_category" => "Robocalls",
 			"custory_post_tags" => "robocalls",
 			"custory_post_comments" => "on",
-			"custory_refresh_rate" => "2:00 AM CST" 
+			"custory_refresh_rate" => "2:00 AM CST"
 	);
-	
+
 	// create new wp role with minimum permissions
 	if (get_role ( 'storyteller' ) == null) {
 		add_role ( 'storyteller', 'Consumers Union Storyteller', array (
 				'read' => true,
-				'level_0' => true 
+				'level_0' => true
 		) );
 	}
-	
+
 	//create activation post page
 	cu_stories_create_page ();
-	
+
 	// create database table
 	cu_stories_create_db ();
-	
+
 	// create correct timestamp for 2 AM CST and schedule synchronization
 	if (! wp_next_scheduled ( 'cu_daily_event' )) {
 		$cstDateTime = new DateTime ( date ( "Y-m-d" ) . " 02:00", new DateTimeZone ( "CST" ) );
 		wp_schedule_event ( $cstDateTime->getTimestamp (), 'daily', 'cu_daily_event' );
 		$options_array["custory_create_event_status"] = "Scheduled";
 	}
-	
+
 	cu_stories_set_options ( $options_array ); //set all options
-		
+
 	register_uninstall_hook ( __FILE__, 'cu_stories_uninstall' );
 }
 
@@ -836,35 +836,35 @@ function cu_stories_deactivation() {
 
 function cu_stories_uninstall() {
 	global $wpdb;
-	
+
 	wp_clear_scheduled_hook ( 'cu_daily_event' );
-	
+
 	remove_role ( "cu_storyteller" );
-	
+
 	cu_stories_remove_page ();
-	
+
 	$category = get_option('custory_post_category');
 	$term_id = term_exists($category, 'category');
 	if ($term_id !== 0 && $term_id !== null)
 		wp_delete_category( $term_id );
-	
+
 	$count = $wpdb->get_var( "SELECT COUNT(*) FROM " . CU_STORIES_TABLE );
-	
+
 	//go through all imported stories
 	while ($count !== null && $count > 0) {
 		$dataRow = $wpdb->get_row("SELECT * FROM " . CU_STORIES_TABLE . " LIMIT 1", OBJECT);
 		$post_author_id = get_post_field( 'post_author', $dataRow->swp_post_id );
-		
+
 		wp_delete_post($dataRow->swp_post_id,true);
-		
+
 		$query = $wpdb->prepare( 'SELECT COUNT(*) FROM wp_posts WHERE post_author = %d', $post_author_id );
 		$count = $wpdb->get_var( $query );
 		if(empty($count))
 			wp_delete_user($post_author_id);
-		
+
 		$count = $wpdb->get_var( "SELECT COUNT(*) FROM " . CU_STORIES_TABLE );
 	}
-	
+
 	$wpdb->query( "DROP TABLE IF EXISTS " . CU_STORIES_TABLE );
 
 	delete_option("custory_api_user");
@@ -884,20 +884,20 @@ function cu_stories_uninstall() {
 	delete_option("custory_page_id");
 	delete_option("custory_page_title");
 	delete_option("custory_page_name");
-	
+
 	return true;
 }
 
 /**
  * *******************************************************************************************************
  *
- * Create custom post and add Stories menu to WordPress 
+ * Create custom post and add Stories menu to WordPress
  *
  * ********************************************************************************************************
  */
 
 function cu_stories_make($singular_label, $plural_label, $settings = array()) {
-	
+
 	// Define the default settings
 	$default_settings = array (
 			'labels' => array (
@@ -910,7 +910,7 @@ function cu_stories_make($singular_label, $plural_label, $settings = array()) {
 					'search_items' => __ ( 'Search ' . $plural_label, 'CU_Story' ),
 					'not_found' => __ ( 'No ' . $plural_label . ' found', 'CU_Story' ),
 					'not_found_in_trash' => __ ( 'No ' . $plural_label . ' found in trash', 'CU_Story' ),
-					'parent_item_colon' => __ ( 'Parent ' . $singular_label, 'CU_Story' ) 
+					'parent_item_colon' => __ ( 'Parent ' . $singular_label, 'CU_Story' )
 			),
 			'public' => true,
 			'menu_icon' => "dashicons-book",
@@ -920,14 +920,14 @@ function cu_stories_make($singular_label, $plural_label, $settings = array()) {
 					'title',
 					'editor',
 					'thumbnail',
-					'custom-fields' 
+					'custom-fields'
 			),
 			'rewrite' => array (
-					'slug' => sanitize_title_with_dashes ( $plural_label ) 
+					'slug' => sanitize_title_with_dashes ( $plural_label )
 			),
 			'delete_with_user' => true
 	);
-	
+
 	// Override any settings provided by user
 	// and store the settings with the posts array
 	return array_merge ( $default_settings, $settings );
@@ -946,14 +946,14 @@ function cu_stories_view_export() {
 	echo "<h2>" . __ ( 'Export stories owners e-mails and activation URLs', 'cu_stories_view_export' )
 		."<br/><br/><input type='button' class='button-primary' value='" . __('Export Data') . "' onclick='doExport();' />"
 	 	. "</h2>";
-	
+
 	return true;
 }
 
 function cu_stories_view_general_settings() {
 	/* These parameters available in template as php variable */
 	$tpl_domain = str_replace ( "http://", "", home_url() );
-	
+
 	include_once CU_STORIES_DIR . 'includes/tpl/general-settings.html';
 }
 
