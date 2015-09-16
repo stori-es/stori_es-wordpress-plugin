@@ -47,7 +47,7 @@ function validateAPIURL(api_url){
 		if(response == 'SUCCESS'){
 			jQuery('#check_result_apiurl').html('Verified').css('color', 'green');
 		}else{
-			jQuery('#check_result_apiurl').html("Invalid key, please try again").css('color', 'red');
+			jQuery('#check_result_apiurl').html("Invalid URL, please try again").css('color', 'red');
 		}
 
 		jQuery('#check_result_apiurl').css('visibility', 'visible');
@@ -58,19 +58,19 @@ function validateAPIURL(api_url){
 
 function validateAPIKey(api_key){
 	var api_url = jQuery('#custory_api_url_id').val();
-	
+
 	if(!api_url || 0 === api_url.length){
 		jQuery('#process_id_apikey').css('visibility','hidden');
 		alert("API Base URL can not be empty!");
 		jQuery('#custory_api_key_id').val("");
-		
+
 		return false;
 	}
-		
+
 	var data = {
 			'action': 'validate_api_key',
 			'api_key': api_key,
-			'api_url': api_url 
+			'api_url': api_url
 		};
 
 
