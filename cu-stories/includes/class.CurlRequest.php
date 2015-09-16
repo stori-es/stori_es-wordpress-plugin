@@ -14,11 +14,16 @@ class CurlRequest {
 	protected $_status;
 	protected $_error;
 	protected $_binaryTransfer;
+	protected $_customRequest;
 
 	public $authentication = 0;
 	public $auth_name = '';
 	public $auth_pass = '';
 
+	public function setCustomRequest(){
+		$this->_customRequest = true;	
+	}
+	
 	public function useAuth($use) {
 		$this->authentication = 0;
 		if ($use == true)
@@ -85,6 +90,10 @@ class CurlRequest {
 			curl_setopt ( $s, CURLOPT_HEADER, true );
 		}
 
+		if($this->_customRequest){
+			curl_setopt ( $s, CURLOPT_CUSTOMREQUEST, "OPTIONS" );
+		}
+		
 		curl_setopt ( $s, CURLOPT_USERAGENT, $this->_useragent );
 		curl_setopt ( $s, CURLOPT_REFERER, $this->_referer );
 

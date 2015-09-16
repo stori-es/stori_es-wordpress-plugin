@@ -18,19 +18,25 @@
 
 				<tr valign="top">
 					<th scope="row">API Base URL</th>
-					<td><input type="text" name="custory_api_url" class="regular-text code"
-							   value="<?php echo get_option('custory_api_url'); ?>" /></td>
+					<td><input id="custory_api_url_id" type="text" name="custory_api_url" class="regular-text code"
+							   value="<?php echo get_option('custory_api_url'); ?>"
+							   onkeypress="return checkAPISection(event);" onblur="return checkAPISection(event);" />
+						<img id="process_id_apiurl" class="process_check"
+							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>"
+							 alt="process indicator" />
+						<label id="check_result_apiurl" class="check_result"></label>
+					</td>
 				</tr>
 
 				<tr valign="top">
 					<th scope="row">API Key</th>
-					<td><input type="text" name="custory_api_key" class="regular-text code" id="custory_api_key_id"
+					<td><input id="custory_api_key_id" type="text" name="custory_api_key" class="regular-text code" id="custory_api_key_id"
 							   value="<?php echo get_option('custory_api_key'); ?>"
-							   onkeypress="return checkAPIKey(event);" onblur="return checkAPIKey(event);"/>
-						<img id="process_id_usr" class="process_check"
+							   onkeypress="return checkAPISection(event);" onblur="return checkAPISection(event);"/>
+						<img id="process_id_apikey" class="process_check"
 							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>"
 							 alt="process indicator" />
-						<label id="check_result_usr" class="check_result"></label>
+						<label id="check_result_apikey" class="check_result"></label>
 					</td>
 				</tr>
 

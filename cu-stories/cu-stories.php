@@ -21,7 +21,6 @@ global $wpdb;
 
 define ( 'CU_STORIES_DIR', plugin_dir_path ( __FILE__ ) );
 define ( 'CU_STORIES_URL', plugin_dir_url ( __FILE__ ) );
-define ( 'CU_STORIES_API_URL', 'https://y.stori.es/api/' ); // ex: https://y.stori.es/api/stories/780689
 define ( 'CU_STORIES_TABLE', $wpdb->prefix . 'stories' );
 
 $HttpHeaders = array( 'Accept: application/json',
@@ -35,7 +34,9 @@ if (trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim
 		// for now we need to skip update of locked form fields
 		if(in_array($key, array("custory_story_pattern", "custory_story_storyteller", "custory_post_type")))
 			continue;
-
+		
+		if($key == "custory_api_url") $value = cu_stories_correct_api_url($value); 
+			
 		if($key == "custory_post_category" && trim($_POST[$key]) != get_option("custory_post_category")){
 
 			$category = get_option('custory_post_category');
@@ -153,19 +154,45 @@ function cu_stories_notify_author($comment_ID, $comment_status) {
 	}
 }
 
+function cu_stories_correct_api_url($url){
+	if(substr(trim($url), -1) !== "/") $url .= "/";
+	return $url;
+}
+
+add_action( 'wp_ajax_validate_api_url', 'cu_stories_validate_apiurl_callback' );
+function cu_stories_validate_apiurl_callback() {
+	global $HttpHeaders;
+	
+	$api_url = cu_stories_correct_api_url($_POST['api_url']);		
+	$lHttpHeaders = $HttpHeaders;
+	unset($lHttpHeaders[1]);
+
+	//get story json based on passed to shortcode story id
+	$CurlRequest = new CurlRequest ();
+	$CurlRequest->setHttpHeaders($lHttpHeaders);
+	$CurlRequest->setCustomRequest();
+	$CurlRequest->createCurl ( $api_url . 'users/self' );
+	json_decode($CurlRequest->getContent());
+
+	echo ($CurlRequest->getHttpStatus() == "200" ?  "SUCCESS" : "ERROR"); // return value to ajax script
+	
+	wp_die();
+}
+
 add_action( 'wp_ajax_validate_api_key', 'cu_stories_validate_apikey_callback' );
 function cu_stories_validate_apikey_callback() {
 	global $HttpHeaders;
 
 	$lHttpHeaders = $HttpHeaders;
 	$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
-
+	$api_url = cu_stories_correct_api_url($_POST['api_url']);
+	
 	//get story json based on passed to shortcode story id
 	$CurlRequest = new CurlRequest ();
 	$CurlRequest->setHttpHeaders($lHttpHeaders);
-	$CurlRequest->createCurl ( CU_STORIES_API_URL . 'users/self' );
+	$CurlRequest->createCurl ( $api_url . 'users/self' );
 	$objUser = json_decode($CurlRequest->getContent());
-
+	
 	echo $objUser->meta->status; // return value to ajax script
 	wp_die();
 }
@@ -177,7 +204,7 @@ function cu_stories_validate_collection_callback() {
 	//get story json based on passed to shortcode story id
 	$CurlRequest = new CurlRequest ();
 	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl ( CU_STORIES_API_URL . 'collections/' . $_POST['collection_id'] );
+	$CurlRequest->createCurl ( get_option('custory_api_url') . 'collections/' . $_POST['collection_id'] );
 	$objCollection = json_decode($CurlRequest->getContent());
 
 	echo $objCollection->meta->status; // return value to ajax script
@@ -229,7 +256,7 @@ function cu_stories_story_activation_redirect($do_redirect) {
 				$CurlRequest = new CurlRequest ();
 				$CurlRequest->setHttpHeaders($locHttpHeaders);
 				$CurlRequest->setPost (json_encode($objDocumentPost));
-				$CurlRequest->createCurl ( CU_STORIES_API_URL . 'documents' );
+				$CurlRequest->createCurl ( get_option('custory_api_url') . 'documents' );
 				$objResponse = json_decode($CurlRequest->getContent());
 
 				if($do_redirect === ""){
@@ -259,7 +286,7 @@ function cu_stories_get_story($atts) {
 
 	//get story json based on passed to shortcode story id
 	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl ( CU_STORIES_API_URL . 'stories/' . $params['id'] );
+	$CurlRequest->createCurl ( get_option('custory_api_url') . 'stories/' . $params['id'] );
 
 	$objStory = json_decode($CurlRequest->getContent());
 
@@ -314,13 +341,10 @@ function cu_stories_synchronization() {
 		$CurlRequest->setHttpHeaders($HttpHeaders);
 
 		//get collection object
-		$CurlRequest->createCurl ( CU_STORIES_API_URL . 'collections/' . get_option('custory_collection_id') );
+		$CurlRequest->createCurl ( get_option('custory_api_url') . 'collections/' . get_option('custory_collection_id') );
 		$objCollection = json_decode($CurlRequest->getContent());
 
 		if($objCollection->meta->status == 'SUCCESS'){
-
-			$CurlRequest->setHttpHeaders($HttpHeaders); // TEST DELETE ON LIVE when issue with headers will be fixed on stori.es side
-
 			//cycle through all collection stories
 			$arrStories = $objCollection->collections[0]->links->stories;
 			foreach($arrStories as $key=>$story){
@@ -365,7 +389,6 @@ function cu_stories_synchronization() {
 						$cu_story_user["user_firstname"] = "";
 						$cu_story_user["user_lastname"] = "";
 
-						//$StoryOwnerUrl = $objStory->stories[0]->links->owner->href . "?organization_context=551295";
 						$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 						$CurlRequest->createCurl ( $StoryOwnerUrl );
 						$objStoryOwner = json_decode($CurlRequest->getContent());
@@ -651,7 +674,8 @@ function cu_stories_adding_scripts() {
 
 	//in JavaScript, object properties are accessed as ajax_object.ajax_url, ajax_object.we_value
 	wp_localize_script( 'cu-stories-script', 'ajax_object',	array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
-	wp_localize_script( 'cu-stories-script', 'php_vars',	array( 'api_key' => get_option('custory_api_key'),
+	wp_localize_script( 'cu-stories-script', 'php_vars',	array( 'api_url' => get_option('custory_api_url'), 
+																   'api_key' => get_option('custory_api_key'),
 																   'collection_id' => get_option('custory_collection_id'),
 																   'export_script_url' => CU_STORIES_URL . "includes/export.php" ) );
 }
@@ -792,7 +816,7 @@ function cu_stories_create_page(){
 
 function cu_stories_activation() {
 	$options_array = array (
-			"custory_api_url" => "",
+			"custory_api_url" => "https://stori.es/api/",
 			"custory_api_key" => "",
 			"custory_collection_id" => "",
 			"custory_story_activation" => "on",
