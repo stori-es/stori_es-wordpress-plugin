@@ -276,7 +276,12 @@ function cu_stories_get_story($atts) {
 		}
 	}
 
-	return $result;
+	$wrapper = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">' 
+  			 . '<div class="stori_es-story-content">' 
+    		 . $result 
+  			 . '</div></div>';
+	 
+	return $wrapper;
 }
 
 add_action ( 'cu_daily_event', 'cu_stories_synchronization' );
