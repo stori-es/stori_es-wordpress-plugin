@@ -792,7 +792,7 @@ function cu_stories_create_page(){
 
 function cu_stories_activation() {
 	$options_array = array (
-			"custory_api_user" => "",
+			"custory_api_url" => "",
 			"custory_api_key" => "",
 			"custory_collection_id" => "",
 			"custory_story_activation" => "on",
@@ -872,7 +872,7 @@ function cu_stories_uninstall() {
 
 	$wpdb->query( "DROP TABLE IF EXISTS " . CU_STORIES_TABLE );
 
-	delete_option("custory_api_user");
+	delete_option("custory_api_url");
 	delete_option("custory_api_key");
 	delete_option("custory_collection_id");
 	delete_option("custory_story_activation");
