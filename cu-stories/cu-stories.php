@@ -962,5 +962,15 @@ function cu_stories_view_settings() {
 	include_once CU_STORIES_DIR . 'includes/tpl/settings.html';
 }
 
+// Add settings link on plugin page
+$plugin = plugin_basename(__FILE__);
+
+add_filter("plugin_action_links_$plugin", 'cu_stories_settings_link' );
+function cu_stories_settings_link($links) {
+	$settings_link = '<a href="edit.php?post_type=custory&page=cu-stories-settings">Settings</a>';
+	array_unshift($links, $settings_link);
+	return $links;
+}
+
 add_action ( 'init', 'cu_stories_register_custom_post' );
 add_action ( 'admin_menu', 'cu_stories_menu' );
