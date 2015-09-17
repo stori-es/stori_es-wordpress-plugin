@@ -160,21 +160,26 @@ function cu_stories_correct_api_url($url){
 }
 
 add_action( 'wp_ajax_validate_api_url', 'cu_stories_validate_apiurl_callback' );
-function cu_stories_validate_apiurl_callback() {
+function cu_stories_validate_apiurl_callback($local = false) {
 	global $HttpHeaders;
+	$result = "";
 	
 	$api_url = cu_stories_correct_api_url($_POST['api_url']);		
 	$lHttpHeaders = $HttpHeaders;
 	unset($lHttpHeaders[1]);
 
-	//get story json based on passed to shortcode story id
+	//get user self json based used passed API URL
 	$CurlRequest = new CurlRequest ();
 	$CurlRequest->setHttpHeaders($lHttpHeaders);
 	$CurlRequest->setCustomRequest();
 	$CurlRequest->createCurl ( $api_url . 'users/self' );
 	json_decode($CurlRequest->getContent());
-
-	echo ($CurlRequest->getHttpStatus() == "200" ?  "SUCCESS" : "ERROR"); // return value to ajax script
+	
+	$result = $CurlRequest->getHttpStatus();
+	
+	if($local) return ($result == "200" ?  "SUCCESS" : "ERROR");
+		
+	echo ($result == "200" ?  "SUCCESS" : "ERROR"); // return value to ajax script
 	
 	wp_die();
 }
@@ -182,18 +187,23 @@ function cu_stories_validate_apiurl_callback() {
 add_action( 'wp_ajax_validate_api_key', 'cu_stories_validate_apikey_callback' );
 function cu_stories_validate_apikey_callback() {
 	global $HttpHeaders;
-
-	$lHttpHeaders = $HttpHeaders;
-	$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
-	$api_url = cu_stories_correct_api_url($_POST['api_url']);
 	
-	//get story json based on passed to shortcode story id
-	$CurlRequest = new CurlRequest ();
-	$CurlRequest->setHttpHeaders($lHttpHeaders);
-	$CurlRequest->createCurl ( $api_url . 'users/self' );
-	$objUser = json_decode($CurlRequest->getContent());
+	if(cu_stories_validate_apiurl_callback(true) == "SUCCESS"){
+		$lHttpHeaders = $HttpHeaders;
+		$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
+		$api_url = cu_stories_correct_api_url($_POST['api_url']);
+		
+		//get user self json based used passed API key
+		$CurlRequest = new CurlRequest ();
+		$CurlRequest->setHttpHeaders($lHttpHeaders);
+		$CurlRequest->createCurl ( $api_url . 'users/self' );
+		$objUser = json_decode($CurlRequest->getContent());
+		
+		echo $objUser->meta->status; // return value to ajax script
+	}else{
+		echo "INVALID";
+	}
 	
-	echo $objUser->meta->status; // return value to ajax script
 	wp_die();
 }
 

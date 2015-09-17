@@ -79,6 +79,8 @@ function validateAPIKey(api_key){
 
 		if(response == 'SUCCESS'){
 			jQuery('#check_result_apikey').html('Verified').css('color', 'green');
+		}else if(response == 'INVALID'){
+			jQuery('#check_result_apikey').html("Invalid URL, please provide correct one").css('color', 'red');
 		}else{
 			jQuery('#check_result_apikey').html("Invalid key, please try again").css('color', 'red');
 		}
