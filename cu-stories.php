@@ -722,7 +722,7 @@ function cu_stories_query_parser( $q ) {
 	$the_page_id = get_option( "custory_page_id" );
 	$the_pattern = get_option( "custory_story_pattern" );
 
-	if(isset($_GET["activate"]) && !isset($_GET["start"]) && $q->query[name] == $the_pattern){
+	if(isset($_GET["activate"]) && !isset($_GET["start"]) && $q->query["name"] == $the_pattern){
 		$q->set('cu_stories_page_is_called', TRUE );
 		update_option ( "custory_activation_link", get_option('custory_story_transport') . "://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}&start=true" );
 		if(!empty($the_page_id) && intval($the_page_id)){
