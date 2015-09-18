@@ -135,7 +135,7 @@ function validateCollection(collection_id){
 		if(response == 'SUCCESS'){
 			jQuery('#check_result').html('Verified').css('color', 'green');
 		}else{
-			jQuery('#check_result').html("Doesn't exist").css('color', 'red');
+			jQuery('#check_result').html("Invalid collection, please try again").css('color', 'red');
 		}
 
 		jQuery('#check_result').css('visibility', 'visible');
