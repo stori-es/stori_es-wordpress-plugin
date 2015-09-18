@@ -34,9 +34,9 @@ if (trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim
 		// for now we need to skip update of locked form fields
 		if(in_array($key, array("custory_story_pattern", "custory_story_storyteller", "custory_post_type")))
 			continue;
-		
-		if($key == "custory_api_url") $value = cu_stories_correct_api_url($value); 
-			
+
+		if($key == "custory_api_url") $value = cu_stories_correct_api_url($value);
+
 		if($key == "custory_post_category" && trim($_POST[$key]) != get_option("custory_post_category")){
 
 			$category = get_option('custory_post_category');
@@ -163,8 +163,8 @@ add_action( 'wp_ajax_validate_api_url', 'cu_stories_validate_apiurl_callback' );
 function cu_stories_validate_apiurl_callback($local = false) {
 	global $HttpHeaders;
 	$result = "";
-	
-	$api_url = cu_stories_correct_api_url($_POST['api_url']);		
+
+	$api_url = cu_stories_correct_api_url($_POST['api_url']);
 	$lHttpHeaders = $HttpHeaders;
 	unset($lHttpHeaders[1]);
 
@@ -174,36 +174,36 @@ function cu_stories_validate_apiurl_callback($local = false) {
 	$CurlRequest->setCustomRequest();
 	$CurlRequest->createCurl ( $api_url . 'users/self' );
 	json_decode($CurlRequest->getContent());
-	
+
 	$result = $CurlRequest->getHttpStatus();
-	
+
 	if($local) return ($result == "200" ?  "SUCCESS" : "ERROR");
-		
+
 	echo ($result == "200" ?  "SUCCESS" : "ERROR"); // return value to ajax script
-	
+
 	wp_die();
 }
 
 add_action( 'wp_ajax_validate_api_key', 'cu_stories_validate_apikey_callback' );
 function cu_stories_validate_apikey_callback() {
 	global $HttpHeaders;
-	
+
 	if(cu_stories_validate_apiurl_callback(true) == "SUCCESS"){
 		$lHttpHeaders = $HttpHeaders;
 		$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
 		$api_url = cu_stories_correct_api_url($_POST['api_url']);
-		
+
 		//get user self json based used passed API key
 		$CurlRequest = new CurlRequest ();
 		$CurlRequest->setHttpHeaders($lHttpHeaders);
 		$CurlRequest->createCurl ( $api_url . 'users/self' );
 		$objUser = json_decode($CurlRequest->getContent());
-		
+
 		echo $objUser->meta->status; // return value to ajax script
 	}else{
 		echo "INVALID";
 	}
-	
+
 	wp_die();
 }
 
@@ -313,11 +313,11 @@ function cu_stories_get_story($atts) {
 		}
 	}
 
-	$wrapper = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">' 
-  			 . '<div class="stori_es-story-content">' 
-    		 . $result 
+	$wrapper = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">'
+  			 . '<div class="stori_es-story-content">'
+    		 . $result
   			 . '</div></div>';
-	 
+
 	return $wrapper;
 }
 
@@ -684,7 +684,7 @@ function cu_stories_adding_scripts() {
 
 	//in JavaScript, object properties are accessed as ajax_object.ajax_url, ajax_object.we_value
 	wp_localize_script( 'cu-stories-script', 'ajax_object',	array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
-	wp_localize_script( 'cu-stories-script', 'php_vars',	array( 'api_url' => get_option('custory_api_url'), 
+	wp_localize_script( 'cu-stories-script', 'php_vars',	array( 'api_url' => get_option('custory_api_url'),
 																   'api_key' => get_option('custory_api_key'),
 																   'collection_id' => get_option('custory_collection_id'),
 																   'export_script_url' => CU_STORIES_URL . "includes/export.php" ) );
@@ -843,7 +843,7 @@ function cu_stories_activation() {
 
 	// create new wp role with minimum permissions
 	if (get_role ( 'storyteller' ) == null) {
-		add_role ( 'storyteller', 'Consumers Union Storyteller', array (
+		add_role ( 'storyteller', 'Storyteller', array (
 				'read' => true,
 				'level_0' => true
 		) );
