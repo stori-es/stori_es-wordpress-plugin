@@ -301,8 +301,9 @@ add_shortcode ( 'stori.es', 'cu_stories_get_story' );
 function cu_stories_get_story($atts) {
 	global $CurlRequest, $HttpHeaders;
 
-	$params = shortcode_atts ( array('id' => '', 'resource' => 'story' ), $atts );
-	$result = "";
+	$params = shortcode_atts ( array('id' => '','resource' => 'story','include' => ''), $atts );
+	$arrIncludes = explode(",", $params['include']);
+	$content = "";
 
 	//get story json based on passed to shortcode story id
 	$CurlRequest->setHttpHeaders($HttpHeaders);
@@ -315,18 +316,18 @@ function cu_stories_get_story($atts) {
 		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
 		$CurlRequest->createCurl ( $DocumentUrl );
 		$objDocument = json_decode( $CurlRequest->getContent() );
-
-		foreach ($objDocument->documents[0]->blocks as $key=>$block){
-			if($block->block_type == 'TextContentBlock'){
-				$result .= $block->value;
+		
+		if($objDocument->meta->status == 'SUCCESS'){
+			foreach ($objDocument->documents[0]->blocks as $key=>$block){
+				if($block->block_type == 'TextContentBlock')
+					$content .= $block->value;
 			}
 		}
 	}
 
-	$wrapper = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">'
-  			 . '<div class="stori_es-story-content">'
-    		 . $result
-  			 . '</div></div>';
+	$wrapper  = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">';
+	$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
+  	$wrapper .= '</div>';
 
 	return $wrapper;
 }
