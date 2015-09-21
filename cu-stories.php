@@ -304,6 +304,7 @@ function cu_stories_get_story($atts) {
 	$params = shortcode_atts ( array('id' => '','resource' => 'story','include' => ''), $atts );
 	$arrIncludes = explode(",", $params['include']);
 	$content = "";
+	$title = "";
 
 	//get story json based on passed to shortcode story id
 	$CurlRequest->setHttpHeaders($HttpHeaders);
@@ -312,12 +313,22 @@ function cu_stories_get_story($atts) {
 	$objStory = json_decode($CurlRequest->getContent());
 
 	if($objStory->meta->status == 'SUCCESS'){
+		
 		//get story document content
 		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
 		$CurlRequest->createCurl ( $DocumentUrl );
 		$objDocument = json_decode( $CurlRequest->getContent() );
 		
 		if($objDocument->meta->status == 'SUCCESS'){
+			if(false !== array_search('title',$arrIncludes)){
+				//default_content title
+				if(isset($objDocument->documents[0]->title)){
+					$title = wp_strip_all_tags( $objDocument->documents[0]->title );
+				}else{
+					$title = "Untitled";
+				}
+			}
+				
 			foreach ($objDocument->documents[0]->blocks as $key=>$block){
 				if($block->block_type == 'TextContentBlock')
 					$content .= $block->value;
@@ -326,6 +337,8 @@ function cu_stories_get_story($atts) {
 	}
 
 	$wrapper  = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">';
+	if(false !== array_search('title',$arrIncludes))
+		$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
 	$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
   	$wrapper .= '</div>';
 
