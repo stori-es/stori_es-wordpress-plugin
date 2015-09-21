@@ -306,7 +306,13 @@ function cu_stories_get_story($atts) {
 	$content = "";
 	$title = "";
 	$byline = "";
+	$byline_pos = "top";
 
+	if(false !== array_search('content',$arrIncludes) && false !== array_search('byline',$arrIncludes)){
+		if(array_search('byline',$arrIncludes) > array_search('content',$arrIncludes))
+		$byline_pos = "bottom";
+	}
+	
 	//get story json based on passed to shortcode story id
 	$CurlRequest->setHttpHeaders($HttpHeaders);
 	$CurlRequest->createCurl ( get_option('custory_api_url') . 'stories/' . $params['id'] );
@@ -360,9 +366,14 @@ function cu_stories_get_story($atts) {
 	$wrapper  = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">';
 	if(false !== array_search('title',$arrIncludes))
 		$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
-	if(false !== array_search('byline',$arrIncludes))
+	if(false !== array_search('byline',$arrIncludes) && $byline_pos === 'top')
 		$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
+	
 	$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
+	
+	if(false !== array_search('byline',$arrIncludes) && $byline_pos === 'bottom')
+		$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
+	
   	$wrapper .= '</div>';
 
 	return $wrapper;
