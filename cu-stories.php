@@ -305,6 +305,7 @@ function cu_stories_get_story($atts) {
 	$arrIncludes = explode(",", $params['include']);
 	$content = "";
 	$title = "";
+	$byline = "";
 
 	//get story json based on passed to shortcode story id
 	$CurlRequest->setHttpHeaders($HttpHeaders);
@@ -313,7 +314,27 @@ function cu_stories_get_story($atts) {
 	$objStory = json_decode($CurlRequest->getContent());
 
 	if($objStory->meta->status == 'SUCCESS'){
-		
+		if(false !== array_search('byline',$arrIncludes)){
+			//get story document content
+			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
+			$CurlRequest->createCurl ( $StoryOwnerUrl );
+			$objStoryOwner = json_decode($CurlRequest->getContent());
+			
+			if($objStoryOwner->meta->status == 'SUCCESS'){
+				$byline = $objStoryOwner->profiles[0]->given_name;
+			
+				$arrContactData = $objStoryOwner->profiles[0]->contacts;
+				foreach ($arrContactData as $key=>$contact_data){
+			
+					if($contact_data->contact_type == "GeolocationContact"){
+						$byline 	.= " of "
+								. ucfirst(strtolower($contact_data->location->city))
+								. ", "
+								. strtoupper($contact_data->location->state);
+					}
+				}
+			}
+		}
 		//get story document content
 		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
 		$CurlRequest->createCurl ( $DocumentUrl );
@@ -339,6 +360,8 @@ function cu_stories_get_story($atts) {
 	$wrapper  = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">';
 	if(false !== array_search('title',$arrIncludes))
 		$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
+	if(false !== array_search('byline',$arrIncludes))
+		$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
 	$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
   	$wrapper .= '</div>';
 
