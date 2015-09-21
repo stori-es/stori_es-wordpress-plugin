@@ -31,9 +31,9 @@ if (isset ( $_POST ["from"] ) && trim ( $_POST ["from"] ) == "stories" && isset 
 	$options_array = array ();
 
 	foreach ( $_POST as $key => $value ) {
-		
+
 		if( !isset( $_POST[$key] ) ) continue; //skip iteration if verifiable POST variable doesn't exist
-		
+
 		// for now we need to skip update of locked form fields
 		if(in_array($key, array("custory_story_pattern", "custory_story_storyteller", "custory_post_type")))
 			continue;
@@ -171,17 +171,17 @@ function cu_stories_validate_apiurl_callback($local = false) {
 		$api_url = cu_stories_correct_api_url($_POST['api_url']);
 		$lHttpHeaders = $HttpHeaders;
 		unset($lHttpHeaders[1]);
-		
+
 		//get user self json based used passed API URL
 		$CurlRequest = new CurlRequest ();
 		$CurlRequest->setHttpHeaders($lHttpHeaders);
 		$CurlRequest->setCustomRequest();
 		$CurlRequest->createCurl ( $api_url . 'users/self' );
 		json_decode($CurlRequest->getContent());
-		
+
 		$result = $CurlRequest->getHttpStatus();
 	}
-		
+
 	if($local) return ($result == "200" ?  "SUCCESS" : "ERROR");
 
 	echo ($result == "200" ?  "SUCCESS" : "ERROR"); // return value to ajax script
@@ -192,7 +192,7 @@ function cu_stories_validate_apiurl_callback($local = false) {
 add_action( 'wp_ajax_validate_api_key', 'cu_stories_validate_apikey_callback' );
 function cu_stories_validate_apikey_callback() {
 	global $HttpHeaders;
-	
+
 	if(isset($_POST['api_key']) && cu_stories_validate_apiurl_callback(true) == "SUCCESS"){
 		$lHttpHeaders = $HttpHeaders;
 		$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
@@ -222,12 +222,12 @@ function cu_stories_validate_collection_callback() {
 		$CurlRequest->setHttpHeaders($HttpHeaders);
 		$CurlRequest->createCurl ( get_option('custory_api_url') . 'collections/' . $_POST['collection_id'] );
 		$objCollection = json_decode($CurlRequest->getContent());
-	
+
 		echo $objCollection->meta->status; // return value to ajax script
 	}else{
 		echo "INVALID";
 	}
-	
+
 	wp_die();
 }
 
@@ -312,7 +312,7 @@ function cu_stories_get_story($atts) {
 		if(array_search('byline',$arrIncludes) > array_search('content',$arrIncludes))
 		$byline_pos = "bottom";
 	}
-	
+
 	//get story json based on passed to shortcode story id
 	$CurlRequest->setHttpHeaders($HttpHeaders);
 	$CurlRequest->createCurl ( get_option('custory_api_url') . 'stories/' . $params['id'] );
@@ -325,13 +325,13 @@ function cu_stories_get_story($atts) {
 			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 			$CurlRequest->createCurl ( $StoryOwnerUrl );
 			$objStoryOwner = json_decode($CurlRequest->getContent());
-			
+
 			if($objStoryOwner->meta->status == 'SUCCESS'){
 				$byline = $objStoryOwner->profiles[0]->given_name;
-			
+
 				$arrContactData = $objStoryOwner->profiles[0]->contacts;
 				foreach ($arrContactData as $key=>$contact_data){
-			
+
 					if($contact_data->contact_type == "GeolocationContact"){
 						$byline 	.= " of "
 								. ucfirst(strtolower($contact_data->location->city))
@@ -345,7 +345,7 @@ function cu_stories_get_story($atts) {
 		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
 		$CurlRequest->createCurl ( $DocumentUrl );
 		$objDocument = json_decode( $CurlRequest->getContent() );
-		
+
 		if($objDocument->meta->status == 'SUCCESS'){
 			if(false !== array_search('title',$arrIncludes)){
 				//default_content title
@@ -355,7 +355,7 @@ function cu_stories_get_story($atts) {
 					$title = "Untitled";
 				}
 			}
-				
+
 			foreach ($objDocument->documents[0]->blocks as $key=>$block){
 				if($block->block_type == 'TextContentBlock')
 					$content .= $block->value;
@@ -368,12 +368,12 @@ function cu_stories_get_story($atts) {
 		$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
 	if(false !== array_search('byline',$arrIncludes) && $byline_pos === 'top')
 		$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
-	
+
 	$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
-	
+
 	if(false !== array_search('byline',$arrIncludes) && $byline_pos === 'bottom')
 		$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
-	
+
   	$wrapper .= '</div>';
 
 	return $wrapper;
@@ -381,7 +381,7 @@ function cu_stories_get_story($atts) {
 
 function cu_stories_process_error_messages($objItem = null){
 	$message = "";
-	
+
 	if($objItem){
 		if(isset($objItem->meta->messages[0]->summary)){
 			$message = $objItem->meta->messages[0]->summary;
@@ -389,7 +389,7 @@ function cu_stories_process_error_messages($objItem = null){
 			if(isset($objItem->meta->http_code))
 				$message = "HTTP status: " . $objItem->meta->http_code;
 		}
-	}	
+	}
 	return $message;
 }
 
@@ -450,7 +450,7 @@ function cu_stories_synchronization() {
 							$cu_story_post["post_title"] = "Untitled";
 						}
 
-						$cu_story_post["post_content"] = '[stori.es resource="resource" id="' . $story_id . '"]';
+						$cu_story_post["post_content"] = '[stori.es resource="story" id="' . $story_id . '"]';
 
 						//get response document email
 						$cu_story_user["user_email"] = "";
@@ -928,7 +928,7 @@ function cu_stories_deactivation() {
 	wp_clear_scheduled_hook ( 'cu_daily_event' );
 	delete_option("custory_api_key");
 	delete_option("custory_collection_id");
-	
+
 	$user_storyteller = get_users(array("role" => get_option('custory_story_storyteller')));
 	if(empty($user_storyteller)) remove_role ( get_option('custory_story_storyteller') );
 }
