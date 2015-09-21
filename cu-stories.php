@@ -850,8 +850,9 @@ function cu_stories_activation() {
 	);
 
 	// create new wp role with minimum permissions
-	if (get_role ( 'storyteller' ) == null) {
-		add_role ( 'storyteller', 'Storyteller', array (
+	$role = $options_array["custory_story_storyteller"];
+	if (get_role ( $role ) == null) {
+		add_role ( $role, 'Storyteller', array (
 				'read' => true,
 				'level_0' => true
 		) );
@@ -879,6 +880,9 @@ function cu_stories_deactivation() {
 	wp_clear_scheduled_hook ( 'cu_daily_event' );
 	delete_option("custory_api_key");
 	delete_option("custory_collection_id");
+	
+	$user_storyteller = get_users(array("role" => get_option('custory_story_storyteller')));
+	if(empty($user_storyteller)) remove_role ( get_option('custory_story_storyteller') );
 }
 
 function cu_stories_uninstall() {
@@ -886,7 +890,7 @@ function cu_stories_uninstall() {
 
 	wp_clear_scheduled_hook ( 'cu_daily_event' );
 
-	remove_role ( "cu_storyteller" );
+	remove_role ( get_option('custory_story_storyteller') );
 
 	cu_stories_remove_page ();
 
