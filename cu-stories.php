@@ -434,9 +434,6 @@ function cu_stories_synchronization() {
 				$objStory = json_decode($CurlRequest->getContent());
 
 				if($objStory->meta->status == 'SUCCESS'){
-					$arrData = explode("/", $objStory->meta->self);
-					$story_id = end($arrData);
-
 					//get default_content story document content
 					$DocumentUrl = $objStory->stories[0]->links->default_content->href;
 					$CurlRequest->createCurl ( $DocumentUrl );
@@ -450,6 +447,7 @@ function cu_stories_synchronization() {
 							$cu_story_post["post_title"] = "Untitled";
 						}
 
+						$story_id = $objStory->stories[0]->id;
 						$cu_story_post["post_content"] = '[stori.es resource="story" id="' . $story_id . '"]';
 
 						//get response document email
