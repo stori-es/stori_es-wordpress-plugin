@@ -27,10 +27,13 @@ $HttpHeaders = array( 'Accept: application/json',
 					  'Authorization: BASIC '. strtoupper(get_option('custory_api_key')),
 					  'Cache-Control: no-cache');
 
-if (trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim ( $_POST ["action"] ) == "update") {
+if (isset ( $_POST ["from"] ) && trim ( $_POST ["from"] ) == "stories" && isset ( $_POST ["action"] ) && trim ( $_POST ["action"] ) == "update") {
 	$options_array = array ();
 
 	foreach ( $_POST as $key => $value ) {
+		
+		if( !isset( $_POST[$key] ) ) continue; //skip iteration if verifiable POST variable doesn't exist
+		
 		// for now we need to skip update of locked form fields
 		if(in_array($key, array("custory_story_pattern", "custory_story_storyteller", "custory_post_type")))
 			continue;
@@ -92,7 +95,7 @@ add_action( 'wp_ajax_ctrl_sync', 'cu_stories_ctrl_sync_callback' );
 function cu_stories_ctrl_sync_callback(){
 	$result = "";
 
-	if($_POST['state'] == 'start'){
+	if(isset($_POST['state']) && $_POST['state'] == 'start'){
 		if(isset($_POST['time'])){
 			$is_scheduled = wp_next_scheduled ( 'cu_daily_event' );
 			if(!empty($is_scheduled)) wp_clear_scheduled_hook ( 'cu_daily_event' );
@@ -162,21 +165,23 @@ function cu_stories_correct_api_url($url){
 add_action( 'wp_ajax_validate_api_url', 'cu_stories_validate_apiurl_callback' );
 function cu_stories_validate_apiurl_callback($local = false) {
 	global $HttpHeaders;
-	$result = "";
+	$result = 0;
 
-	$api_url = cu_stories_correct_api_url($_POST['api_url']);
-	$lHttpHeaders = $HttpHeaders;
-	unset($lHttpHeaders[1]);
-
-	//get user self json based used passed API URL
-	$CurlRequest = new CurlRequest ();
-	$CurlRequest->setHttpHeaders($lHttpHeaders);
-	$CurlRequest->setCustomRequest();
-	$CurlRequest->createCurl ( $api_url . 'users/self' );
-	json_decode($CurlRequest->getContent());
-
-	$result = $CurlRequest->getHttpStatus();
-
+	if( isset($_POST['api_url']) ){
+		$api_url = cu_stories_correct_api_url($_POST['api_url']);
+		$lHttpHeaders = $HttpHeaders;
+		unset($lHttpHeaders[1]);
+		
+		//get user self json based used passed API URL
+		$CurlRequest = new CurlRequest ();
+		$CurlRequest->setHttpHeaders($lHttpHeaders);
+		$CurlRequest->setCustomRequest();
+		$CurlRequest->createCurl ( $api_url . 'users/self' );
+		json_decode($CurlRequest->getContent());
+		
+		$result = $CurlRequest->getHttpStatus();
+	}
+		
 	if($local) return ($result == "200" ?  "SUCCESS" : "ERROR");
 
 	echo ($result == "200" ?  "SUCCESS" : "ERROR"); // return value to ajax script
@@ -187,8 +192,8 @@ function cu_stories_validate_apiurl_callback($local = false) {
 add_action( 'wp_ajax_validate_api_key', 'cu_stories_validate_apikey_callback' );
 function cu_stories_validate_apikey_callback() {
 	global $HttpHeaders;
-
-	if(cu_stories_validate_apiurl_callback(true) == "SUCCESS"){
+	
+	if(isset($_POST['api_key']) && cu_stories_validate_apiurl_callback(true) == "SUCCESS"){
 		$lHttpHeaders = $HttpHeaders;
 		$lHttpHeaders[1] = 'Authorization: BASIC '. $_POST['api_key'];
 		$api_url = cu_stories_correct_api_url($_POST['api_url']);
@@ -211,13 +216,18 @@ add_action( 'wp_ajax_validate_collection', 'cu_stories_validate_collection_callb
 function cu_stories_validate_collection_callback() {
 	global $HttpHeaders;
 
-	//get story json based on passed to shortcode story id
-	$CurlRequest = new CurlRequest ();
-	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl ( get_option('custory_api_url') . 'collections/' . $_POST['collection_id'] );
-	$objCollection = json_decode($CurlRequest->getContent());
-
-	echo $objCollection->meta->status; // return value to ajax script
+	if(isset($_POST['collection_id'])){
+		//get story json based on passed to shortcode story id
+		$CurlRequest = new CurlRequest ();
+		$CurlRequest->setHttpHeaders($HttpHeaders);
+		$CurlRequest->createCurl ( get_option('custory_api_url') . 'collections/' . $_POST['collection_id'] );
+		$objCollection = json_decode($CurlRequest->getContent());
+	
+		echo $objCollection->meta->status; // return value to ajax script
+	}else{
+		echo "INVALID";
+	}
+	
 	wp_die();
 }
 
