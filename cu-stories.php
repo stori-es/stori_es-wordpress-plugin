@@ -331,6 +331,20 @@ function cu_stories_get_story($atts) {
 	return $wrapper;
 }
 
+function cu_stories_process_error_messages($objItem = null){
+	$message = "";
+	
+	if($objItem){
+		if(isset($objItem->meta->messages[0]->summary)){
+			$message = $objItem->meta->messages[0]->summary;
+		}else{
+			if(isset($objItem->meta->http_code))
+				$message = "HTTP status: " . $objItem->meta->http_code;
+		}
+	}	
+	return $message;
+}
+
 add_action ( 'cu_daily_event', 'cu_stories_synchronization' );
 function cu_stories_synchronization() {
 	global $CurlRequest, $HttpHeaders, $wpdb;
@@ -372,7 +386,8 @@ function cu_stories_synchronization() {
 				$objStory = json_decode($CurlRequest->getContent());
 
 				if($objStory->meta->status == 'SUCCESS'){
-					$story_id = end(explode("/", $objStory->meta->self));
+					$arrData = explode("/", $objStory->meta->self);
+					$story_id = end($arrData);
 
 					//get default_content story document content
 					$DocumentUrl = $objStory->stories[0]->links->default_content->href;
@@ -435,12 +450,7 @@ function cu_stories_synchronization() {
 							$arrErrors[] = array(
 									'ErrorType' => "StoryOwner",
 									'objURL' => $objStoryOwner->meta->self,
-									'Headers' => implode(",", $CurlRequest->getHttpHeaders()),
-									'ErrorMessage' => $objStoryOwner->meta->messages[0]->summary,
-									'StoryOwnerUrl' => $StoryOwnerUrl,
-									'CurlHttpStatus' => $CurlRequest->getHttpStatus(),
-									'CurlError' => $CurlRequest->getError()
-
+									'ErrorMessage' => cu_stories_process_error_messages($objStoryOwner)
 							);
 						}
 
@@ -478,10 +488,6 @@ function cu_stories_synchronization() {
 								$arrErrors[] = array(
 										'ErrorType' => "WPUserCreation",
 										'objURL' => $objStoryOwner->meta->self,
-										'User Name' => $user_name,
-										'User Pass' => $random_password,
-										'User Email' => $cu_story_user["user_email"],
-										'Headers' => implode(",", $CurlRequest->getHttpHeaders()),
 										'ErrorMessage' => implode(",", $user_id->get_error_messages())
 								);
 							}
@@ -587,25 +593,17 @@ function cu_stories_synchronization() {
 						$arrErrors[] = array(
 								'ErrorType' => "Document",
 								'objURL' => $objDocument->meta->self,
-								'ErrorMessage' => $objDocument->meta->messages[0]->summary,
-								'DocumentUrl' => $DocumentUrl,
-								'Object' => var_export($DocumentUrl),
-								'CurlHttpStatus' => $CurlRequest->getHttpStatus(),
-								'CurlError' => $CurlRequest->getError(),
-								'DefDocStoryId' => $story_id
-
+								'ErrorMessage' => cu_stories_process_error_messages($objDocument)
 						);
 					}
 				}else{
-					$story_id = end(explode("/", $story->href));
+					$arrData = explode("/", $story->href);
+					$story_id = end($arrData);
 					unset($arrLocalStoriesSet[$story_id]);
 					$arrErrors[] = array(
 							'ErrorType' => "Story",
 							'objURL' => $objStory->meta->self,
-							'ErrorMessage' => $objStory->meta->messages[0]->summary,
-							'Object' => var_export($story),
-							'CurlHttpStatus' => $CurlRequest->getHttpStatus(),
-							'CurlError' => $CurlRequest->getError()
+							'ErrorMessage' => cu_stories_process_error_messages($objStory)
 					);
 				} //
 			}
@@ -613,7 +611,7 @@ function cu_stories_synchronization() {
 			$arrErrors[] = array(
 					'ErrorType' => "Collection",
 					'objURL' => $objCollection->meta->self,
-					'ErrorMessage' => $objCollection->meta->messages[0]->summary
+					'ErrorMessage' => cu_stories_process_error_messages($objCollection)
 			);
 		}
 
