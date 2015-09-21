@@ -676,7 +676,7 @@ function cu_stories_synchronization() {
 	//send email to admin in case errors
 	if(!empty($arrErrors)){
 		$to = get_bloginfo('admin_email');
-		$subject = 'Customer Union Stories synchronization errors';
+		$subject = '[stori.es WordPress Plugin] Synchronization errors';
 		$headers = array('Content-Type: text/html; charset=UTF-8');
 
 		$body = "<table>";
