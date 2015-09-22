@@ -450,21 +450,6 @@ function cu_stories_synchronization() {
 						$story_id = $objStory->stories[0]->id;
 						$cu_story_post["post_content"] = '[stori.es resource="story" id="' . $story_id . '"]';
 
-						//get response document email
-						$cu_story_user["user_email"] = "";
-
-						$ResponseDocumentUrl = $objStory->stories[0]->links->responses[0]->href;
-						$CurlRequest->createCurl ( $ResponseDocumentUrl );
-						$objResponseDocument = json_decode($CurlRequest->getContent());
-
-						if($objResponseDocument->meta->status == 'SUCCESS'){
-							foreach ($objResponseDocument->documents[0]->blocks as $key=>$block){
-								if($block->block_type == 'EmailQuestionBlock'){
-									$cu_story_user["user_email"] = $block->value;
-								}
-							}
-						}
-
 						//Storyteller information
 						$cu_story_user["user_login"] = "";
 						$cu_story_user["user_firstname"] = "";
