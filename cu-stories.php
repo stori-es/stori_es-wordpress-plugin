@@ -486,8 +486,8 @@ function cu_stories_synchronization() {
 								if($contact_data->contact_type == "GeolocationContact"){
 									$cu_story_user["user_lastname"] = "of "
 											. ucfirst(strtolower($contact_data->location->city))
-											. ","
-													. strtoupper($contact_data->location->state);
+											. ", "
+											. strtoupper($contact_data->location->state);
 								}
 
 								if(empty($cu_story_user["user_email"]) && $contact_data->contact_type == "EmailContact"){
