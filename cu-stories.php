@@ -320,23 +320,28 @@ function cu_stories_get_story($atts) {
 	$objStory = json_decode($CurlRequest->getContent());
 
 	if($objStory->meta->status == 'SUCCESS'){
-		if(false !== array_search('byline',$arrIncludes)){
-			//get story document content
+		//get story document byline
+		if(in_array('byline',$arrIncludes)){
 			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 			$CurlRequest->createCurl ( $StoryOwnerUrl );
 			$objStoryOwner = json_decode($CurlRequest->getContent());
 
 			if($objStoryOwner->meta->status == 'SUCCESS'){
-				$byline = $objStoryOwner->profiles[0]->given_name;
+				$byline = trim($objStoryOwner->profiles[0]->given_name);
 
 				$arrContactData = $objStoryOwner->profiles[0]->contacts;
 				foreach ($arrContactData as $key=>$contact_data){
 
 					if($contact_data->contact_type == "GeolocationContact"){
-						$byline 	.= " of "
-								. ucfirst(strtolower($contact_data->location->city))
-								. ", "
-								. strtoupper($contact_data->location->state);
+						if(!empty($byline))
+							$byline  .= " of ";
+						if(trim($contact_data->location->city) != "")
+								$byline  .= ucfirst(strtolower(trim($contact_data->location->city)));
+						if(trim($contact_data->location->state) != ""){
+							if(trim($byline) != "")
+								$byline  .= ", ";
+							$byline  .= strtoupper(trim($contact_data->location->state));
+						}
 					}
 				}
 			}
@@ -369,6 +374,9 @@ function cu_stories_get_story($atts) {
 		switch (current($arrIncludes)){
 			case "title":
 				$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
+				break;
+			case "byline":
+				$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
 				break;
 		}
 	}else{
