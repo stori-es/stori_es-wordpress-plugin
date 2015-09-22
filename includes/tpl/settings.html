@@ -146,7 +146,10 @@
 					<th scope="row">Immediate Synchronization</th>
 					<td><input type="button" class="button button-secondary"
 						name="custory_synch_now" value="Sync Now" onclick="actionSyncNow();"/>
-						<span id="sync_now_status">&nbsp;</span>
+						<img id="process_id_sync_now" class="process_check"
+							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>"
+							 alt="process indicator" />
+						<label id="sync_now_feedback" class="check_result"></label>
 					</td>
 				</tr>
 				<tr valign="top">

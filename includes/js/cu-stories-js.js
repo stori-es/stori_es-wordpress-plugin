@@ -157,14 +157,23 @@ function test(){
 }
 
 function actionSyncNow(){
-	var data = {
-			'action': 'sync_now'
-		};
+	jQuery('#sync_now_feedback').css('visibility', 'hidden');
+	jQuery('#process_id_sync_now').css('visibility','visible');
 
-	jQuery.post(ajax_object.ajax_url, data, function(response) {
-		if( response )
-			jQuery('#sync_now_status').text( "Completed" );
-		alert('Synchronization start - ' + response);
+	var data = {
+		'action': 'sync_now'
+	};
+
+	jQuery.post(ajax_object.ajax_url, data, function(response){
+		jQuery('#process_id_sync_now').css('visibility','hidden');
+
+		if( response == 'SUCCESS' ){
+			jQuery('#sync_now_feedback').html('Complete').css('color', 'green');
+		} else {
+			jQuery('#sync_now_feedback').html("Error encountered").css('color', 'red');
+		}
+
+		jQuery('#sync_now_feedback').css('visibility', 'visible');
 	});
 
 	return true;

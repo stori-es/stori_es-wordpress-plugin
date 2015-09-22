@@ -411,7 +411,6 @@ function cu_stories_process_error_messages($objItem = null){
 }
 
 add_action( 'cu_daily_event', 'cu_stories_synchronization' );
-add_action( 'wp_ajax_sync_now', 'cu_stories_synchronization' );
 function cu_stories_synchronization() {
 	global $CurlRequest, $HttpHeaders, $wpdb;
 
@@ -696,6 +695,21 @@ function cu_stories_synchronization() {
 	}
 	return true;
 }
+
+
+add_action( 'wp_ajax_sync_now', 'cu_stories_synchronize_now' );
+function cu_stories_synchronize_now(){
+	$process_status = cu_stories_synchronization();
+
+	if( $process_status == true ){
+		echo 'SUCCESS';
+	} else {
+		echo 'FAIL';
+	}
+
+	wp_die();
+}
+
 
 function cu_stories_delete_story($arrStories, $story_id){
 	global $wpdb;
