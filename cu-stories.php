@@ -302,7 +302,8 @@ function cu_stories_get_story($atts) {
 	global $CurlRequest, $HttpHeaders;
 
 	$params = shortcode_atts ( array('id' => '','resource' => 'story','include' => ''), $atts );
-	$arrIncludes = (isset($params['include']) && trim($params['include']) != "" ? explode(",", $params['include']) : array());
+	$params['include'] = preg_replace('/\s+/', '', $params['include']);
+	$arrIncludes = (trim($params['include']) != "" ? explode(",", $params['include']) : array());
 	$content = "";
 	$title = "";
 	$byline = "";
