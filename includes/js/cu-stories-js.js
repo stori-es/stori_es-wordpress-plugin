@@ -156,6 +156,20 @@ function test(){
 	return true;
 }
 
+function actionSyncNow(){
+	var data = {
+			'action': 'sync_now'
+		};
+
+	jQuery.post(ajax_object.ajax_url, data, function(response) {
+		if( response )
+			jQuery('#sync_now_status').text( "Completed" );
+		alert('Synchronization start - ' + response);
+	});
+
+	return true;
+}
+
 function actionStartSync(){
 
 	var sync_time = jQuery('#custory_refresh_rate_id').val();

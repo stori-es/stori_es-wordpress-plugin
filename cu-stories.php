@@ -361,7 +361,7 @@ function cu_stories_get_story($atts) {
 					$title = "Untitled";
 				}
 			}
-			
+
 			//get default_content deocument content
 			foreach ($objDocument->documents[0]->blocks as $key=>$block){
 				if($block->block_type == 'TextContentBlock')
@@ -385,9 +385,9 @@ function cu_stories_get_story($atts) {
 			$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
 		if(in_array('byline',$arrIncludes) && $byline_pos === 'top')
 			$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
-	
+
 		$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
-	
+
 		if(in_array('byline',$arrIncludes) && $byline_pos === 'bottom')
 			$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
 	}
@@ -410,7 +410,8 @@ function cu_stories_process_error_messages($objItem = null){
 	return $message;
 }
 
-add_action ( 'cu_daily_event', 'cu_stories_synchronization' );
+add_action( 'cu_daily_event', 'cu_stories_synchronization' );
+add_action( 'wp_ajax_sync_now', 'cu_stories_synchronization' );
 function cu_stories_synchronization() {
 	global $CurlRequest, $HttpHeaders, $wpdb;
 
