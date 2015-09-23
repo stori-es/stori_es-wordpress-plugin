@@ -471,6 +471,7 @@ function cu_stories_synchronization() {
 						$cu_story_user["user_login"] = "";
 						$cu_story_user["user_firstname"] = "";
 						$cu_story_user["user_lastname"] = "";
+						$cu_story_user["user_email"] = "";
 
 						$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 						$CurlRequest->createCurl ( $StoryOwnerUrl );
