@@ -1037,6 +1037,7 @@ function cu_stories_make($singular_label, $plural_label, $settings = array()) {
 			'supports' => array (
 					'title',
 					'editor',
+					'author',
 					'thumbnail',
 					'custom-fields'
 			),
