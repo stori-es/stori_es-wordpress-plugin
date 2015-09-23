@@ -947,6 +947,8 @@ function cu_stories_deactivation() {
 
 	$user_storyteller = get_users(array("role" => get_option('custory_story_storyteller')));
 	if(empty($user_storyteller)) remove_role ( get_option('custory_story_storyteller') );
+
+	remove_filter( 'parse_query', 'cu_stories_query_parser' );
 }
 
 function cu_stories_uninstall() {
@@ -954,8 +956,9 @@ function cu_stories_uninstall() {
 
 	wp_clear_scheduled_hook ( 'cu_daily_event' );
 
-	remove_role ( get_option('custory_story_storyteller') );
+	remove_role( get_option('custory_story_storyteller') );
 
+	remove_filter( 'parse_query', 'cu_stories_query_parser' );
 	cu_stories_remove_page ();
 
 	$category = get_option('custory_post_category');
