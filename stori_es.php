@@ -52,7 +52,7 @@ if( isset($_POST['from']) && trim($_POST['from']) == 'stories' && isset($_POST['
 	stori_es_set_options($options_array);
 
 	// Redirect back to the Plugin Settings screen
-	header('Location: ' . get_site_url() . '/wp-admin/edit.php?post_type=stori_es&page=stori-es-settings');
+	header('Location: ' . get_site_url() . '/wp-admin/options-general.php?page=stori_es_settings');
 	die();
 }
 
