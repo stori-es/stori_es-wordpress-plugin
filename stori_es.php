@@ -232,7 +232,7 @@ function stori_es_get_story( $atts ){
 /* Add plugin styles */
 add_action( 'admin_enqueue_scripts', 'stori_es_adding_styles' );
 function stori_es_adding_styles(){
-	wp_register_style('stori-es-stylesheet', STORI_ES_URL . 'includes/css/stori-es-stylesheet.css');
+	wp_register_style('stori-es-stylesheet', STORI_ES_URL . 'includes/css/stori_es.css');
 	wp_enqueue_style('stori-es-stylesheet');
 }
 
@@ -278,6 +278,12 @@ function stori_es_uninstall(){
 }
 
 
+add_action('admin_menu', 'stori_es_add_options_page');
+function stori_es_add_options_page(){
+  add_options_page('stori.es Settings', 'stori.es Settings', 'administrator', 'stori_es_settings', 'stori_es_view_settings');
+}
+
+
 function stori_es_view_settings(){
 	include_once STORI_ES_PATH . 'includes/tpl/settings.html';
 }
@@ -287,7 +293,7 @@ function stori_es_view_settings(){
 $plugin = plugin_basename(__FILE__);
 add_filter("plugin_action_links_$plugin", 'stori_es_settings_link');
 function stori_es_settings_link( $links ){
-	$settings_link = '<a href="edit.php?post_type=stori_es&page=stori-es-settings">Settings</a>';
+	$settings_link = '<a href="options-general.php?page=stori_es_settings">Settings</a>';
 	array_unshift($links, $settings_link);
 	return $links;
 }
