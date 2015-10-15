@@ -67,7 +67,6 @@ function stori_es_set_options( $options_array ){
 
 // CurlRequest object creating in the end of the class file
 include_once STORI_ES_PATH . 'includes/class.CurlRequest.php';
-register_activation_hook(__FILE__, 'stori_es_activation');
 
 
 function stori_es_correct_api_url( $url ){
@@ -130,11 +129,11 @@ function stori_es_validate_apikey_callback() {
 
 
 // [stori.es resource="xxxx" id="xxxx"]
-add_shortcode ( 'stori.es', 'stori_es_get_story' );
+add_shortcode('stori.es', 'stori_es_get_story');
 function stori_es_get_story( $atts ){
 	global $CurlRequest, $HttpHeaders;
 
-	$params = shortcode_atts ( array('id' => '','resource' => 'story','include' => ''), $atts );
+	$params = shortcode_atts( array('id' => '','resource' => 'story','include' => ''), $atts );
 	$params['include'] = preg_replace('/\s+/', '', $params['include']);
 	$arrIncludes = (trim($params['include']) != "" ? explode(",", $params['include']) : array());
 	$content = "";
@@ -230,21 +229,6 @@ function stori_es_get_story( $atts ){
 }
 
 
-function stori_es_process_error_messages($objItem = null){
-	$message = "";
-
-	if( $objItem ){
-		if( isset($objItem->meta->messages[0]->summary) ){
-			$message = $objItem->meta->messages[0]->summary;
-		} else {
-			if( isset($objItem->meta->http_code) )
-				$message = 'HTTP status: ' . $objItem->meta->http_code;
-		}
-	}
-	return $message;
-}
-
-
 /* Add plugin styles */
 add_action( 'admin_enqueue_scripts', 'stori_es_adding_styles' );
 function stori_es_adding_styles(){
@@ -268,13 +252,18 @@ function stori_es_adding_scripts(){
 }
 
 
+register_activation_hook(__FILE__, 'stori_es_activation');
+function stori_es_activation(){}
+
+
 register_deactivation_hook(__FILE__, 'stori_es_deactivation');
-function stori_es_deactivation() {
+function stori_es_deactivation(){
 	delete_option('stori_es_api_key');
 }
 
 
-function stori_es_uninstall() {
+register_uninstall_hook(__FILE__, 'stori_es_uninstall');
+function stori_es_uninstall(){
 	global $wpdb;
 	delete_option('stori_es_api_url');
 	delete_option('stori_es_api_key');
@@ -282,9 +271,7 @@ function stori_es_uninstall() {
 }
 
 
-function stori_es_view_settings() {
-	/* These parameters available in template as php variable */
-	$tpl_domain = str_replace('http://', '', home_url());
+function stori_es_view_settings(){
 	include_once STORI_ES_PATH . 'includes/tpl/settings.html';
 }
 
@@ -292,7 +279,7 @@ function stori_es_view_settings() {
 // Add settings link on Plugin Card
 $plugin = plugin_basename(__FILE__);
 add_filter("plugin_action_links_$plugin", 'stori_es_settings_link');
-function stori_es_settings_link($links) {
+function stori_es_settings_link( $links ){
 	$settings_link = '<a href="edit.php?post_type=stori_es&page=stori-es-settings">Settings</a>';
 	array_unshift($links, $settings_link);
 	return $links;
