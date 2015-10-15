@@ -280,7 +280,7 @@ function stori_es_uninstall(){
 
 add_action('admin_menu', 'stori_es_add_options_page');
 function stori_es_add_options_page(){
-  add_options_page('stori.es Settings', 'stori.es Settings', 'administrator', 'stori_es_settings', 'stori_es_view_settings');
+  add_options_page('stori.es', 'stori.es', 'administrator', 'stori_es_settings', 'stori_es_view_settings');
 }
 
 
