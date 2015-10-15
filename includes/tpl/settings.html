@@ -2,15 +2,14 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Insert title here</title>
+<title>stori.es WordPress Plugin - Settings</title>
 </head>
 <body>
 	<form method="post" id="post_form_id">
 		<?php wp_nonce_field('update-options'); ?>
 		<h2>stori.es WordPress Plugin - Settings</h2>
 		<p class="submit">
-			<input type="submit" class="button-primary"
-				value="<?php _e('Save Changes') ?>" />
+			<input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
 		</p>
 		<div class="section">
 			<h3 class="itemtitle">stori.es API Configuration</h3>
@@ -18,11 +17,12 @@
 
 				<tr valign="top">
 					<th scope="row">API Base URL</th>
-					<td><input id="custory_api_url_id" type="text" name="custory_api_url" class="regular-text code"
-							   value="<?php echo get_option('custory_api_url'); ?>"
-							   onkeypress="return checkAPISection(event);" onblur="return checkAPISection(event);" />
+					<td><input id="custory_api_url_id" type="text" name="stori_es_api_url" class="regular-text code"
+							   value="<?php echo get_option('stori_es_api_url'); ?>"
+							   onkeypress="return checkAPISection(event);"
+								 onblur="return checkAPISection(event);" />
 						<img id="process_id_apiurl" class="process_check"
-							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>"
+							 src="<?php echo STORI_ES_URL . '/includes/img/process-64.gif' ?>"
 							 alt="process indicator" />
 						<label id="check_result_apiurl" class="check_result"></label>
 					</td>
@@ -30,158 +30,24 @@
 
 				<tr valign="top">
 					<th scope="row">API Key</th>
-					<td><input id="custory_api_key_id" type="text" name="custory_api_key" class="regular-text code" id="custory_api_key_id"
-							   value="<?php echo get_option('custory_api_key'); ?>"
-							   onkeypress="return checkAPISection(event);" onblur="return checkAPISection(event);"/>
+					<td><input id="custory_api_key_id" type="text" name="stori_es_api_key" class="regular-text code"
+							   value="<?php echo get_option('stori_es_api_key'); ?>"
+							   onkeypress="return checkAPISection(event);"
+								 onblur="return checkAPISection(event);"/>
 						<img id="process_id_apikey" class="process_check"
-							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>"
+							 src="<?php echo STORI_ES_URL . '/includes/img/process-64.gif' ?>"
 							 alt="process indicator" />
 						<label id="check_result_apikey" class="check_result"></label>
 					</td>
 				</tr>
-
 			</table>
-		</div>
-		<div id="cu-story_secondsettings_container" <?php echo get_option('custory_api_key') == '' ? 'hidden':'' ?> >
-		<div class="section">
-			<h3 class="itemtitle">stori.es Collection Synchronization</h3>
-			<table class="form-table">
-				<tr valign="top">
-					<th scope="row">Collection</th>
-					<td>
-						<input type="text" name="custory_collection_id"
-								value="<?php echo get_option('custory_collection_id'); ?>"
-								onkeypress="return checkInput(event);" onblur="return checkInput(event);"/>
-						<img id="process_ind_id" class="process_check" src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>" alt="process indicator" />
-						<label id="check_result" class="check_result"></label>
-						<p class="description" id="tagline-description">Collection ID from stori.es site</p>
-					</td>
-				</tr>
-
-				<tr valign="top">
-					<th scope="row">Enable Story Activation?</th>
-					<td><input type="hidden" value="off"
-						name="custory_story_activation" /> <input type="checkbox"
-						name="custory_story_activation"<?php
-						if(get_option('custory_story_activation') == 'on') echo "
-						checked='checked'" ?> /></td>
-				</tr>
-
-				<tr valign="top">
-					<th scope="row">Story Activation URL</th>
-					<td><span>[TRANSPORT]://<?php echo $tpl_domain; ?>/[PATTERN]?activate=[STORY_ACTIVATION_KEY]</span>
-					<p class="description" id="tagline-description">Please be sure that permalinks are enabled</p>
-						<table class="form-sub-table">
-							<tr valign="top">
-								<th scope="row">TRANSPORT</th>
-								<td><select name="custory_story_transport">
-										<option value="http"<?php
-											if(get_option('custory_story_transport') == "http") echo
-											'SELECTED'; ?> >http</option>
-										<option value="https"<?php
-											if(get_option('custory_story_transport') != "http") echo
-											'SELECTED'; ?> >https</option>
-								</select></td>
-							</tr>
-							<tr valign="top">
-								<th scope="row">PATTERN</th>
-								<td><input type="text" name="custory_story_pattern"
-									value="<?php echo get_option('custory_story_pattern'); ?>"
-									readonly="readonly" /></td>
-							</tr>
-						</table></td>
-				</tr>
-
-			</table>
-		</div>
-		<div class="section">
-			<h3 class="itemtitle">stori.es User Synchronization</h3>
-			<table class="form-table">
-				<tr valign="top">
-					<th scope="row">Create Users</th>
-					<td><input type="checkbox" name="custory_create_users"<?php
-						if(get_option('custory_create_users') == 'on') echo "
-						checked='checked'" ?> disabled="disabled" /></td>
-				</tr>
-				<tr valign="top">
-					<th scope="row">WordPress Role</th>
-					<td><input type="text" name="custory_story_storyteller"
-						value="<?php echo get_option('custory_story_storyteller'); ?>"
-						readonly="readonly" /></td>
-				</tr>
-			</table>
-		</div>
-		<div class="section">
-			<h3 class="itemtitle">stori.es Story Synchronization</h3>
-			<table class="form-table">
-				<tr valign="top">
-					<th scope="row">Post Type</th>
-					<td><input type="text" name="custory_post_type"
-						value="<?php echo get_option('custory_post_type'); ?>"
-						readonly="readonly" /></td>
-				</tr>
-				<tr valign="top">
-					<th scope="row">Post Category</th>
-					<td><input type="text" name="custory_post_category"
-						value="<?php echo get_option('custory_post_category'); ?>" /></td>
-				</tr>
-				<tr valign="top">
-					<th scope="row">Tags</th>
-					<td><input type="text" name="custory_post_tags"
-						value="<?php echo get_option('custory_post_tags'); ?>" /></td>
-				</tr>
-				<tr valign="top">
-					<th scope="row">Enable Comments</th>
-					<td><input type="hidden" value="off" name="custory_post_comments" />
-						<input type="checkbox" name="custory_post_comments"<?php
-						if(get_option('custory_post_comments') == 'on') echo "
-						checked='checked'" ?> /></td>
-				</tr>
-			</table>
-		</div>
-		<div class="section">
-			<h3 class="itemtitle">Synchronization Controls</h3>
-			<table class="form-table">
-				<tr valign="top">
-					<th scope="row">Immediate Synchronization</th>
-					<td><input type="button" class="button button-secondary"
-						name="custory_synch_now" value="Sync Now" onclick="actionSyncNow();"/>
-						<img id="process_id_sync_now" class="process_check"
-							 src="<?php echo CU_STORIES_URL . '/includes/img/process-64.gif' ?>"
-							 alt="process indicator" />
-						<label id="sync_now_feedback" class="check_result"></label>
-					</td>
-				</tr>
-				<tr valign="top">
-					<th scope="row">Schedule Synchronization</th>
-					<td><select id="custory_refresh_rate_id" name="custory_refresh_rate">
-							<option value="<?php echo get_option('custory_refresh_rate') ?>"
-								SELECTED>
-								<?php echo get_option('custory_refresh_rate'); ?>
-							</option>
-					</select>
-					<p class="description" id="tagline-description">Current state - <span id="sync_state"><?php echo get_option('custory_create_event_status') ?></span></p>
-					</td>
-				</tr>
-				<tr valign="top">
-					<th scope="row">&nbsp;</th>
-					<td><input type="button" class="button button-secondary"
-						name="custory_synch_start" value="Start" onclick="actionStartSync();"/> &nbsp;
-						<input type="button" class="button button-secondary"
-						name="custory_synch_stop" value="Stop" onclick="actionStopSync();"/>
-					</td>
-				</tr>
-			</table>
-		</div>
 		</div>
 		<p class="submit">
-			<input type="submit" class="button-primary"
-				value="<?php _e('Save Changes') ?>" />
+			<input type="submit" class="button-primary" value="<?php _e('Save Changes') ?>" />
 		</p>
-		<input type="hidden" name="action" value="update" /> <input
-			type="hidden" name="page_options"
-			value="new_option_name,some_other_option,option_etc" />
-			<input type="hidden" name="from" value="stories">
+		<input type="hidden" name="action" value="update" />
+		<input type="hidden" name="from" value="stories">
+		<input type="hidden" name="page_options" value="new_option_name,some_other_option,option_etc" />
 	</form>
 </body>
 </html>
