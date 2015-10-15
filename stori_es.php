@@ -253,7 +253,14 @@ function stori_es_adding_scripts(){
 
 
 register_activation_hook(__FILE__, 'stori_es_activation');
-function stori_es_activation(){}
+function stori_es_activation(){
+	// Plugin options
+	$options_array = array(
+			'stori_es_api_url' => 'https://stori.es/api/',
+			'stori_es_api_key' => ''
+	);
+	stori_es_set_options($options_array);
+}
 
 
 register_deactivation_hook(__FILE__, 'stori_es_deactivation');
