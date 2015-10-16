@@ -155,13 +155,14 @@ function stori_es_get_story( $atts ){
 			$objStoryOwner = json_decode($CurlRequest->getContent());
 
 			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS ){
-				$byline = trim($objStoryOwner->profiles[0]->given_name);
+				$given_name = trim($objStoryOwner->profiles[0]->given_name);
+				$byline = empty($given_name) ? 'Anonymous' : $given_name;
 
 				foreach( $objStoryOwner->profiles[0]->contacts as $key => $contact_data ){
 					if( $contact_data->contact_type == STORI_ES_CONTACT_GEOLOCATION ){
 						$city = trim($contact_data->location->city);
 						$state = trim($contact_data->location->state);
-						if( !empty($byline) && (!empty($city) || !empty($state)) )  $byline .= ' of ';
+						if( !empty($city) || !empty($state) )  $byline .= ' of ';
 						if( !empty($city) )  $byline .= ucfirst(strtolower($city));
 						if( !empty($state) ){
 							if( !empty($city) )  $byline .= ', ';
