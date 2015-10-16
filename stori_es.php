@@ -159,10 +159,10 @@ function stori_es_get_story( $atts ){
 
 				foreach( $objStoryOwner->profiles[0]->contacts as $key => $contact_data ){
 					if( $contact_data->contact_type == STORI_ES_CONTACT_GEOLOCATION ){
-						if( !empty($byline) )  $byline .= ' of ';
 						$city = trim($contact_data->location->city);
-						if( !empty($city) )  $byline .= ucfirst(strtolower($city));
 						$state = trim($contact_data->location->state);
+						if( !empty($byline) && (!empty($city) || !empty($state)) )  $byline .= ' of ';
+						if( !empty($city) )  $byline .= ucfirst(strtolower($city));
 						if( !empty($state) ){
 							if( !empty($city) )  $byline .= ', ';
 							$byline .= strtoupper($state);
