@@ -195,6 +195,9 @@ function stori_es_get_story( $atts ){
 					if( $block->block_type == STORI_ES_BLOCK_CONTENT_TEXT )
 						$content .= $block->value;
 				}
+
+				// Precede newlines with HTML <br /> tags
+				$content = nl2br($content);
 			}
 		}
 	}
