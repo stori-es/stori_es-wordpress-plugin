@@ -18,6 +18,8 @@ define('STORI_ES_URL',  plugin_dir_url(__FILE__));
 define('STORI_ES_API_SUCCESS', 'SUCCESS');
 define('STORI_ES_API_ERROR',   'ERROR');
 define('STORI_ES_API_INVALID', 'INVALID');
+define('STORI_ES_CONTACT_GEOLOCATION', 'GeolocationContact');
+define('STORI_ES_BLOCK_CONTENT_TEXT', 'TextContentBlock');
 
 global $wpdb;
 
@@ -25,6 +27,14 @@ $HttpHeaders = array(
 	  'Accept: application/json',
 		'Authorization: BASIC ' . strtoupper(get_option('stori_es_api_key')),
 		'Cache-Control: no-cache');
+
+
+function stori_es_set_options( $options_array ){
+	foreach( $options_array as $key => $value ){
+		update_option($key, trim($options_array [$key]));
+	}
+	return true;
+}
 
 
 // Handle POSTs from the Plugin Settings screen
@@ -57,15 +67,7 @@ if( isset($_POST['from']) && trim($_POST['from']) == 'stories' && isset($_POST['
 }
 
 
-function stori_es_set_options( $options_array ){
-	foreach( $options_array as $key => $value ){
-		update_option($key, trim($options_array [$key]));
-	}
-	return true;
-}
-
-
-// CurlRequest object creating in the end of the class file
+// Global $CurlRequest object created at the end of this class file
 include_once STORI_ES_PATH . 'includes/class.CurlRequest.php';
 
 
@@ -133,97 +135,85 @@ add_shortcode('stori.es', 'stori_es_get_story');
 function stori_es_get_story( $atts ){
 	global $CurlRequest, $HttpHeaders;
 
-	$params = shortcode_atts( array('id' => '','resource' => 'story','include' => ''), $atts );
+	$params = shortcode_atts(array('resource' => 'story', 'id' => '','include' => 'content'), $atts);
 	$params['include'] = preg_replace('/\s+/', '', $params['include']);
-	$arrIncludes = (trim($params['include']) != "" ? explode(",", $params['include']) : array());
-	$content = "";
-	$title = "";
-	$byline = "";
-	$byline_pos = "top";
+	$arrIncludes = explode(',', $params['include']);
+	$title = '';
+	$byline = '';
+	$content = '';
 
-	if(in_array('content',$arrIncludes) && in_array('byline',$arrIncludes)){
-		if(array_search('byline',$arrIncludes) > array_search('content',$arrIncludes))
-		$byline_pos = "bottom";
-	}
-
-	//get story json based on passed to shortcode story id
+	// GET Story
 	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl ( get_option('stori_es_api_url') . 'stories/' . $params['id'] );
-
+	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'stories/' . $params['id']);
 	$objStory = json_decode($CurlRequest->getContent());
 
-	if($objStory->meta->status == 'SUCCESS'){
-		//get story document byline
-		if(in_array('byline',$arrIncludes)){
+	if( $objStory->meta->status == STORI_ES_API_SUCCESS ){
+		// GET byline via Story Owner Profile
+		if( in_array('byline', $arrIncludes) ){
 			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
-			$CurlRequest->createCurl ( $StoryOwnerUrl );
+			$CurlRequest->createCurl($StoryOwnerUrl);
 			$objStoryOwner = json_decode($CurlRequest->getContent());
 
-			if($objStoryOwner->meta->status == 'SUCCESS'){
+			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS ){
 				$byline = trim($objStoryOwner->profiles[0]->given_name);
 
-				$arrContactData = $objStoryOwner->profiles[0]->contacts;
-				foreach ($arrContactData as $key=>$contact_data){
-
-					if($contact_data->contact_type == "GeolocationContact"){
-						if(!empty($byline))
-							$byline  .= " of ";
-						if(trim($contact_data->location->city) != "")
-								$byline  .= ucfirst(strtolower(trim($contact_data->location->city)));
-						if(trim($contact_data->location->state) != ""){
-							if(trim($byline) != "")
-								$byline  .= ", ";
-							$byline  .= strtoupper(trim($contact_data->location->state));
+				foreach( $objStoryOwner->profiles[0]->contacts as $key => $contact_data ){
+					if( $contact_data->contact_type == STORI_ES_CONTACT_GEOLOCATION ){
+						if( !empty($byline) )  $byline .= ' of ';
+						$city = trim($contact_data->location->city);
+						if( !empty($city) )  $byline .= ucfirst(strtolower($city));
+						$state = trim($contact_data->location->state);
+						if( !empty($state) ){
+							if( !empty($city) )  $byline .= ', ';
+							$byline .= strtoupper($state);
 						}
+
+						break;
 					}
 				}
 			}
 		}
-		//get story document content
-		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
-		$CurlRequest->createCurl ( $DocumentUrl );
-		$objDocument = json_decode( $CurlRequest->getContent() );
 
-		if($objDocument->meta->status == 'SUCCESS'){
-			//get default_content deocument title
-			if(in_array('title',$arrIncludes)){
-				if(isset($objDocument->documents[0]->title)){
-					$title = wp_strip_all_tags( $objDocument->documents[0]->title );
-				}else{
-					$title = "Untitled";
+		// GET default Content Document
+		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
+		$CurlRequest->createCurl($DocumentUrl);
+		$objDocument = json_decode($CurlRequest->getContent());
+
+	 	if( $objDocument->meta->status == STORI_ES_API_SUCCESS ){
+			// Get title
+			if( in_array('title', $arrIncludes) ){
+				if( isset($objDocument->documents[0]->title) ){
+					$title = wp_strip_all_tags($objDocument->documents[0]->title);
+				} else {
+					$title = 'Untitled';
 				}
 			}
 
-			//get default_content deocument content
-			foreach ($objDocument->documents[0]->blocks as $key=>$block){
-				if($block->block_type == 'TextContentBlock')
-					$content .= $block->value;
+			// Get content
+			if( in_array('content', $arrIncludes) ){
+				foreach( $objDocument->documents[0]->blocks as $key=>$block ){
+					if( $block->block_type == STORI_ES_BLOCK_CONTENT_TEXT )
+						$content .= $block->value;
+				}
 			}
 		}
 	}
 
-	$wrapper  = '<div id="stori_es-story-'. $params["id"] . '" class="stori_es-story">';
-	if(count($arrIncludes) === 1){
-		switch (current($arrIncludes)){
-			case "title":
+	$wrapper  = '<div id="stori_es-story-'. $params['id'] . '" class="stori_es-story">';
+	foreach( $arrIncludes as $include ){
+		switch( $include ){
+			case 'title':
 				$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
 				break;
-			case "byline":
+			case 'byline':
 				$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
 				break;
+			case 'content':
+				$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
+				break;
 		}
-	}else{
-		if(in_array('title',$arrIncludes))
-			$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
-		if(in_array('byline',$arrIncludes) && $byline_pos === 'top')
-			$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
-
-		$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
-
-		if(in_array('byline',$arrIncludes) && $byline_pos === 'bottom')
-			$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
 	}
-  	$wrapper .= '</div>';
+  $wrapper .= '</div>';
 
 	return $wrapper;
 }
