@@ -1,0 +1,23 @@
+.stori_es-story {
+  margin: 15px 10px;
+  padding: 10px;
+  background: rgba(192,192,192,0.3);
+  border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  box-shadow: #B3B3B3 5px 5px 5px;
+  -webkit-box-shadow: #B3B3B3 5px 5px 5px;
+  -moz-box-shadow: #B3B3B3 5px 5px 5px;
+}
+
+.stori_es-story-title {
+  font-weight: bold;
+}
+
+.stori_es-story-byline {
+  font-style: italic;
+}
+
+.stori_es-story-content {
+
+}

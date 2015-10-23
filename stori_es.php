@@ -224,10 +224,16 @@ function stori_es_get_story( $atts ){
 
 
 /* Add plugin styles */
-add_action( 'admin_enqueue_scripts', 'stori_es_adding_styles' );
-function stori_es_adding_styles(){
-	wp_register_style('stori-es-stylesheet', STORI_ES_URL . 'includes/css/stori_es.css');
-	wp_enqueue_style('stori-es-stylesheet');
+add_action( 'admin_enqueue_scripts', 'stori_es_add_admin_styles' );
+function stori_es_add_admin_styles(){
+	wp_register_style('stori_es-stylesheet-admin', STORI_ES_URL . 'includes/css/stori_es-admin.css');
+	wp_enqueue_style('stori_es-stylesheet-admin');
+}
+
+add_action( 'wp_enqueue_scripts', 'stori_es_add_public_styles' );
+function stori_es_add_public_styles(){
+	wp_register_style('stori_es-stylesheet-public', STORI_ES_URL . 'includes/css/stori_es-public.css');
+	wp_enqueue_style('stori_es-stylesheet-public');
 }
 
 
