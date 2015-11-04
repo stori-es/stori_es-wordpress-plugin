@@ -19,7 +19,7 @@
 }
 
 .stori_es-story-content {}
-.stori_es-story-content-text {}
+.stori_es-story-content-text { overflow: auto; }
 .stori_es-story-content-text-image {}
 
 .stori_es-story-image {}
