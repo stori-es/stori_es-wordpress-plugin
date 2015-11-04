@@ -37,3 +37,8 @@
 .stori_es-story-image-small  { width: 25%; }
 .stori_es-story-image-medium { width: 50%; }
 .stori_es-story-image-large  { width: 75%; }
+
+.stori_es-story-image-caption {
+  font-style: italic;
+  font-size: smaller;
+}

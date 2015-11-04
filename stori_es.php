@@ -244,14 +244,13 @@ function stori_es_get_story( $atts ){
 				foreach( $content as $key => $block ){
 					$wrapper .= '<div class="stori_es-story-content-text">';
 					if( isset($block->image) ){
-						$wrapper .= '<img ';
-
-						// Image classes
-						$wrapper .= 'class="stori_es-story-image stori_es-story-content-text-image ';
+						// Image container
+						$wrapper .= '<div class="stori_es-story-content-text-image ';
 						$wrapper .= 'stori_es-story-image-' . $block->image->horizontal_position . ' ';
-						$wrapper .= 'stori_es-story-image-' . $block->image->size . '" ';
+						$wrapper .= 'stori_es-story-image-' . $block->image->size . '">';
 
-						// Image href
+						// Image
+						$wrapper .= '<img class="stori_es-story-image" ';
 						$wrapper .= 'src="' . $block->image->href . '" ';
 
 						// Image alternative text
@@ -259,6 +258,12 @@ function stori_es_get_story( $atts ){
 							$wrapper .= 'alt="' . $block->image->alt_text . '" ';
 
 						$wrapper .= '/>';
+
+						// Image caption
+						if( isset($block->image->caption) )
+						  $wrapper .= '<div class="stori_es-story-image-caption">' . $block->image->caption . '</div>';
+
+						$wrapper .= '</div>';
 					}
 
 					// Text
