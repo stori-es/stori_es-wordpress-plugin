@@ -214,9 +214,9 @@ class stori_es_VideoContentBlock {
 	public $caption;
 
 	public function __construct($source){
-		$this->href = $source->href;
-		$this->title = $source->title;
-		$this->caption = $source->caption;
+		$this->href = $source->video->href;
+		$this->title = $source->video->title;
+		$this->caption = $source->video->caption;
 	}
 
 	public function embed_href(){
