@@ -43,9 +43,8 @@
   font-size: smaller;
 }
 
-.stori_es-story-content-video {}
-
-.stori_es-story-content-video iframe {
+.stori_es-story-content-video {
+  width: 420px;
   margin: auto;
 }
 

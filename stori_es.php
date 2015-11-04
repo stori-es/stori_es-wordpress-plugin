@@ -229,8 +229,11 @@ class stori_es_VideoContentBlock {
 		if( !empty($this->href) ){
 			$output .= '<div class="stori_es-story-content-video">';
 
+			/*
+			 * Do not display the video title for now
 			if( !empty($this->title) )
 				$output .= '<div class="stori_es-story-content-video-title">' . $this->title . '</div>';
+			*/
 
 			$output .= '<iframe width="420" height="315" src="';
 			$output .= $this->embed_href();
