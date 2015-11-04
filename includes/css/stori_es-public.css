@@ -18,6 +18,22 @@
   font-style: italic;
 }
 
-.stori_es-story-content {
+.stori_es-story-content {}
+.stori_es-story-content-text {}
+.stori_es-story-content-text-image {}
 
+.stori_es-story-image {}
+
+.stori_es-story-image-left {
+  float: left;
+  margin-right: 10px;
 }
+
+.stori_es-story-image-right {
+  float: right;
+  margin-left: 10px;
+}
+
+.stori_es-story-image-small  { width: 25%; }
+.stori_es-story-image-medium { width: 50%; }
+.stori_es-story-image-large  { width: 75%; }

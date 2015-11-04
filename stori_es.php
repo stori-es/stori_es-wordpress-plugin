@@ -31,7 +31,7 @@ $HttpHeaders = array(
 
 function stori_es_set_options( $options_array ){
 	foreach( $options_array as $key => $value ){
-		update_option($key, trim($options_array [$key]));
+		update_option($key, trim($options_array[$key]));
 	}
 	return true;
 }
@@ -130,6 +130,19 @@ function stori_es_validate_apikey_callback() {
 }
 
 
+class stori_es_ImageResource {
+	public $href = '';
+	public $horizontal_position = 'left';
+	public $size = 'small';
+	public $caption;
+	public $alt_text;
+}
+
+class stori_es_TextContentBlock {
+	public $value = '';
+	public $image;
+}
+
 // [stori.es resource="xxxx" id="xxxx"]
 add_shortcode('stori.es', 'stori_es_get_story');
 function stori_es_get_story( $atts ){
@@ -140,7 +153,7 @@ function stori_es_get_story( $atts ){
 	$arrIncludes = explode(',', $params['include']);
 	$title = '';
 	$byline = '';
-	$content = '';
+	$content = array();
 
 	// GET Story
 	$CurlRequest->setHttpHeaders($HttpHeaders);
@@ -192,13 +205,17 @@ function stori_es_get_story( $atts ){
 
 			// Get content
 			if( in_array('content', $arrIncludes) ){
-				foreach( $objDocument->documents[0]->blocks as $key=>$block ){
-					if( $block->block_type == STORI_ES_BLOCK_CONTENT_TEXT )
-						$content .= $block->value;
-				}
+				foreach( $objDocument->documents[0]->blocks as $key=>$document_block ){
+					if( $document_block->block_type == STORI_ES_BLOCK_CONTENT_TEXT ){
+						var $block = new stori_es_TextContentBlock();
 
-				// Precede newlines with HTML <br /> tags
-				$content = nl2br($content);
+						// Precede newlines with HTML <br /> tags
+						$block->value = nl2br($document_block->value);
+
+						// Push block onto content array
+						$content[] = $block;
+					}
+				}
 			}
 		}
 	}
@@ -213,7 +230,33 @@ function stori_es_get_story( $atts ){
 				$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
 				break;
 			case 'content':
-				$wrapper .= '<div class="stori_es-story-content">' . $content . '</div>';
+				$wrapper .= '<div class="stori_es-story-content">';
+				foreach( $content as $key => $block ){
+					$wrapper .= '<div class="stori_es-story-content-text">';
+					if( isset($block->image) ){
+						$wrapper .= '<img ';
+
+						// Image classes
+						$wrapper .= 'class="stori_es-story-image stori_es-story-content-text-image ';
+						$wrapper .= 'stori_es-story-image-' . $block->image->horizontal_position . ' ';
+						$wrapper .= 'stori_es-story-image-' . $block->image->size . '" ';
+
+						// Image href
+						$wrapper .= 'src="' . $block->image->href . '" ';
+
+						// Image alternative text
+						if( isset($block->image->alt_text) )
+							$wrapper .= 'alt="' . $block->image->alt_text . '" ';
+
+						$wrapper .= '/>';
+					}
+
+					// Text
+					$wrapper .= $block->value;
+
+					$wrapper .= '</div>';
+				}
+				$wrapper .= '</div>';
 				break;
 		}
 	}
