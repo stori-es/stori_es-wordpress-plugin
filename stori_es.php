@@ -207,7 +207,7 @@ function stori_es_get_story( $atts ){
 			if( in_array('content', $arrIncludes) ){
 				foreach( $objDocument->documents[0]->blocks as $key=>$document_block ){
 					if( $document_block->block_type == STORI_ES_BLOCK_CONTENT_TEXT ){
-						var $block = new stori_es_TextContentBlock();
+						$block = new stori_es_TextContentBlock();
 
 						// Precede newlines with HTML <br /> tags
 						$block->value = nl2br($document_block->value);
