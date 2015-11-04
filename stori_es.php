@@ -212,6 +212,16 @@ function stori_es_get_story( $atts ){
 						// Precede newlines with HTML <br /> tags
 						$block->value = nl2br($document_block->value);
 
+						// Retrieve image if present
+						if( isset($document_block->image) ){
+							$block->image = new stori_es_ImageResource();
+							$block->image->href = $document_block->image->href;
+							$block->image->horizontal_position = $document_block->image->horizontal_position;
+							$block->image->size = $document_block->image->size;
+							$block->image->caption = $document_block->image->caption;
+							$block->image->alt_text = $document_block->image->alt_text;
+						}
+
 						// Push block onto content array
 						$content[] = $block;
 					}
