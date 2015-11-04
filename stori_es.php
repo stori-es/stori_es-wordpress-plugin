@@ -20,6 +20,7 @@ define('STORI_ES_API_ERROR',   'ERROR');
 define('STORI_ES_API_INVALID', 'INVALID');
 define('STORI_ES_CONTACT_GEOLOCATION', 'GeolocationContact');
 define('STORI_ES_BLOCK_CONTENT_TEXT', 'TextContentBlock');
+define('STORI_ES_BLOCK_CONTENT_VIDEO', 'VideoContentBlock');
 
 global $wpdb;
 
@@ -136,11 +137,113 @@ class stori_es_ImageResource {
 	public $size = 'small';
 	public $caption;
 	public $alt_text;
+
+	public function __construct($source){
+		$this->href = $source->href;
+		$this->horizontal_position = $source->horizontal_position;
+		$this->size = $source->size;
+		$this->caption = $source->caption;
+		$this->alt_text = $source->alt_text;
+	}
+
+	public function output(){
+		$output = '';
+
+		if( !empty($this->href) ){
+			// Image container
+			$output .= '<div class="stori_es-story-content-text-image ';
+			$output .= 'stori_es-story-image-' . $this->horizontal_position . ' ';
+			$output .= 'stori_es-story-image-' . $this->size . '">';
+
+			// Image
+			$output .= '<img class="stori_es-story-image" ';
+			$output .= 'src="' . $this->href . '" ';
+
+			// Image alternative text
+			if( !empty($this->alt_text) )
+				$output .= 'alt="' . $this->alt_text . '" ';
+
+			$output .= '/>';
+
+			// Image caption
+			if( !empty($this->caption) )
+				$output .= '<div class="stori_es-story-image-caption">' . $this->caption . '</div>';
+
+			$output .= '</div>';
+		}
+
+		return($output);
+	}
 }
 
 class stori_es_TextContentBlock {
 	public $value = '';
 	public $image;
+
+	public function __construct($source){
+		// Precede newlines with HTML <br /> tags
+		$this->value = nl2br($source->value);
+
+		// Retrieve image if present
+		if( isset($source->image) )
+			$this->image = new stori_es_ImageResource($source->image);
+	}
+
+	public function output(){
+		$output = '';
+
+		if( !empty($this->value) ){
+			$output .= '<div class="stori_es-story-content-text">';
+
+			// Image, if present
+			if( isset($this->image) )  $output .= $this->image->output();
+
+			// Text
+			$output .= $this->value;
+
+			$output .= '</div>';
+		}
+
+		return($output);
+	}
+}
+
+class stori_es_VideoContentBlock {
+	public $href = '';
+	public $title;
+	public $caption;
+
+	public function __construct($source){
+		$this->href = $source->href;
+		$this->title = $source->title;
+		$this->caption = $source->caption;
+	}
+
+	public function embed_href(){
+		return(str_replace('watch?v=', 'embed/', $this->href));
+	}
+
+	public function output(){
+		$output = '';
+
+		if( !empty($this->href) ){
+			$output .= '<div class="stori_es-story-content-video">';
+
+			if( !empty($this->title) )
+				$output .= '<div class="stori_es-story-content-video-title">' . $this->title . '</div>';
+
+			$output .= '<iframe width="420" height="315" src="';
+			$output .= $this->embed_href();
+			$output .= '" frameborder="0" allowfullscreen></iframe>';
+
+			if( !empty($this->caption) )
+				$output .= '<div class="stori_es-story-content-video-caption">' . $this->caption . '</div>';
+
+			$output .= '</div>';
+		}
+
+		return($output);
+	}
 }
 
 // [stori.es resource="xxxx" id="xxxx"]
@@ -205,25 +308,14 @@ function stori_es_get_story( $atts ){
 
 			// Get content
 			if( in_array('content', $arrIncludes) ){
-				foreach( $objDocument->documents[0]->blocks as $key=>$document_block ){
-					if( $document_block->block_type == STORI_ES_BLOCK_CONTENT_TEXT ){
-						$block = new stori_es_TextContentBlock();
-
-						// Precede newlines with HTML <br /> tags
-						$block->value = nl2br($document_block->value);
-
-						// Retrieve image if present
-						if( isset($document_block->image) ){
-							$block->image = new stori_es_ImageResource();
-							$block->image->href = $document_block->image->href;
-							$block->image->horizontal_position = $document_block->image->horizontal_position;
-							$block->image->size = $document_block->image->size;
-							$block->image->caption = $document_block->image->caption;
-							$block->image->alt_text = $document_block->image->alt_text;
-						}
-
-						// Push block onto content array
-						$content[] = $block;
+				foreach( $objDocument->documents[0]->blocks as $key => $block ){
+					switch( $block->block_type ){
+						case STORI_ES_BLOCK_CONTENT_TEXT:
+							$content[] = new stori_es_TextContentBlock($block);
+							break;
+						case STORI_ES_BLOCK_CONTENT_VIDEO:
+							$content[] = new stori_es_VideoContentBlock($block);
+							break;
 					}
 				}
 			}
@@ -241,36 +333,7 @@ function stori_es_get_story( $atts ){
 				break;
 			case 'content':
 				$wrapper .= '<div class="stori_es-story-content">';
-				foreach( $content as $key => $block ){
-					$wrapper .= '<div class="stori_es-story-content-text">';
-					if( isset($block->image) ){
-						// Image container
-						$wrapper .= '<div class="stori_es-story-content-text-image ';
-						$wrapper .= 'stori_es-story-image-' . $block->image->horizontal_position . ' ';
-						$wrapper .= 'stori_es-story-image-' . $block->image->size . '">';
-
-						// Image
-						$wrapper .= '<img class="stori_es-story-image" ';
-						$wrapper .= 'src="' . $block->image->href . '" ';
-
-						// Image alternative text
-						if( isset($block->image->alt_text) )
-							$wrapper .= 'alt="' . $block->image->alt_text . '" ';
-
-						$wrapper .= '/>';
-
-						// Image caption
-						if( isset($block->image->caption) )
-						  $wrapper .= '<div class="stori_es-story-image-caption">' . $block->image->caption . '</div>';
-
-						$wrapper .= '</div>';
-					}
-
-					// Text
-					$wrapper .= $block->value;
-
-					$wrapper .= '</div>';
-				}
+				foreach( $content as $key => $block )  $wrapper .= $block->output();
 				$wrapper .= '</div>';
 				break;
 		}
