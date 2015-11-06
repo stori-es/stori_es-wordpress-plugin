@@ -14,6 +14,7 @@
 if( ! defined('ABSPATH') )  exit();  // Exit if accessed directly
 
 define('NAMESPACE_SEPARATOR', '\\');
+define('STORI_ES_CLASS_NAMESPACE', 'stori_es');
 define('STORI_ES_PATH', plugin_dir_path(__FILE__));
 define('STORI_ES_CLASS_PATH', STORI_ES_PATH . 'includes/classes/');
 define('STORI_ES_URL',  plugin_dir_url(__FILE__));
@@ -32,9 +33,12 @@ $HttpHeaders = array(
 
 
 // Autoload classes
-spl_autoload_register(function( $class ){
-	$classpath = str_replace(NAMESPACE_SEPARATOR, DIRECTORY_SEPARATOR, $class);
-  include STORI_ES_CLASS_PATH . $classpath . '.class.php';
+spl_autoload_register(function( $class_name ){
+	// Ensure we are only autoloading stori_es classes
+	if( substr($class_name, 0, 8) === STORI_ES_CLASS_NAMESPACE ){
+		$class_path = str_replace(NAMESPACE_SEPARATOR, DIRECTORY_SEPARATOR, $class_name);
+	  include_once(STORI_ES_CLASS_PATH . $class_path . '.class.php');
+	}
 });
 
 
