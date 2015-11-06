@@ -14,13 +14,13 @@
 if( ! defined('ABSPATH') )  exit();  // Exit if accessed directly
 
 define('STORI_ES_PATH', plugin_dir_path(__FILE__));
+define('STORI_ES_CLASS_PATH', STORI_ES_PATH . 'includes/classes/stori_es/');
 define('STORI_ES_URL',  plugin_dir_url(__FILE__));
 define('STORI_ES_API_SUCCESS', 'SUCCESS');
 define('STORI_ES_API_ERROR',   'ERROR');
 define('STORI_ES_API_INVALID', 'INVALID');
-define('STORI_ES_CONTACT_GEOLOCATION', 'GeolocationContact');
-define('STORI_ES_BLOCK_CONTENT_TEXT', 'TextContentBlock');
-define('STORI_ES_BLOCK_CONTENT_VIDEO', 'VideoContentBlock');
+define('STORI_ES_RESOURCE_STORY', 'story');
+define('STORI_ES_RESOURCE_COLLECTION', 'collection');
 
 global $wpdb;
 
@@ -28,6 +28,12 @@ $HttpHeaders = array(
 	  'Accept: application/json',
 		'Authorization: BASIC ' . strtoupper(get_option('stori_es_api_key')),
 		'Cache-Control: no-cache');
+
+
+// Autoload classes
+spl_autoload_register(function( $class ){
+  include STORI_ES_CLASS_PATH . $class . '.class.php';
+});
 
 
 function stori_es_set_options( $options_array ){
@@ -131,135 +137,33 @@ function stori_es_validate_apikey_callback() {
 }
 
 
-class stori_es_ImageResource {
-	public $href = '';
-	public $horizontal_position = 'left';
-	public $size = 'small';
-	public $caption;
-	public $alt_text;
+// [stori.es resource="xxxx" id="xxxx" include="xxxx"]
+add_shortcode('stori.es', 'stori_es_shortcode');
+function stori_es_shortcode( $atts ){
+	$resource = strtolower($atts['resource']);
+	$output = '';
 
-	public function __construct($source){
-		$this->href = $source->href;
-		$this->horizontal_position = $source->horizontal_position;
-		$this->size = $source->size;
-		$this->caption = $source->caption;
-		$this->alt_text = $source->alt_text;
+	switch( $resource ){
+		case STORI_ES_RESOURCE_STORY:
+			$output = stori_es_get_story_output($atts);
+			break;
+		case STORI_ES_RESOURCE_COLLECTION:
+			$output = stori_es_get_collection_output($atts);
+			break;
 	}
 
-	public function output(){
-		$output = '';
-
-		if( !empty($this->href) ){
-			// Image container
-			$output .= '<div class="stori_es-story-content-text-image ';
-			$output .= 'stori_es-story-image-' . $this->horizontal_position . ' ';
-			$output .= 'stori_es-story-image-' . $this->size . '">';
-
-			// Image
-			$output .= '<img class="stori_es-story-image" ';
-			$output .= 'src="' . $this->href . '" ';
-
-			// Image alternative text
-			if( !empty($this->alt_text) )
-				$output .= 'alt="' . $this->alt_text . '" ';
-
-			$output .= '/>';
-
-			// Image caption
-			if( !empty($this->caption) )
-				$output .= '<div class="stori_es-story-image-caption">' . $this->caption . '</div>';
-
-			$output .= '</div>';
-		}
-
-		return($output);
-	}
+	return($output);
 }
 
-class stori_es_TextContentBlock {
-	public $value = '';
-	public $image;
 
-	public function __construct($source){
-		// Precede newlines with HTML <br /> tags
-		$this->value = nl2br($source->value);
-
-		// Retrieve image if present
-		if( isset($source->image) )
-			$this->image = new stori_es_ImageResource($source->image);
-	}
-
-	public function output(){
-		$output = '';
-
-		if( !empty($this->value) ){
-			$output .= '<div class="stori_es-story-content-text">';
-
-			// Image, if present
-			if( isset($this->image) )  $output .= $this->image->output();
-
-			// Text
-			$output .= $this->value;
-
-			$output .= '</div>';
-		}
-
-		return($output);
-	}
-}
-
-class stori_es_VideoContentBlock {
-	public $href = '';
-	public $title;
-	public $caption;
-
-	public function __construct($source){
-		$this->href = $source->video->href;
-		$this->title = $source->video->title;
-		$this->caption = $source->video->caption;
-	}
-
-	public function embed_href(){
-		return(str_replace('watch?v=', 'embed/', $this->href));
-	}
-
-	public function output(){
-		$output = '';
-
-		if( !empty($this->href) ){
-			$output .= '<div class="stori_es-story-content-video">';
-
-			/*
-			 * Do not display the video title for now
-			if( !empty($this->title) )
-				$output .= '<div class="stori_es-story-content-video-title">' . $this->title . '</div>';
-			*/
-
-			$output .= '<iframe width="420" height="315" src="';
-			$output .= $this->embed_href();
-			$output .= '" frameborder="0" allowfullscreen></iframe>';
-
-			if( !empty($this->caption) )
-				$output .= '<div class="stori_es-story-content-video-caption">' . $this->caption . '</div>';
-
-			$output .= '</div>';
-		}
-
-		return($output);
-	}
-}
-
-// [stori.es resource="xxxx" id="xxxx"]
-add_shortcode('stori.es', 'stori_es_get_story');
-function stori_es_get_story( $atts ){
+// [stori.es resource="story" id="xxxx" include="xxxx"]
+function stori_es_get_story_output( $atts ){
 	global $CurlRequest, $HttpHeaders;
 
+	// Process shortcode parameters
 	$params = shortcode_atts(array('resource' => 'story', 'id' => '','include' => 'content'), $atts);
 	$params['include'] = preg_replace('/\s+/', '', $params['include']);
 	$arrIncludes = explode(',', $params['include']);
-	$title = '';
-	$byline = '';
-	$content = array();
 
 	// GET Story
 	$CurlRequest->setHttpHeaders($HttpHeaders);
@@ -273,25 +177,8 @@ function stori_es_get_story( $atts ){
 			$CurlRequest->createCurl($StoryOwnerUrl);
 			$objStoryOwner = json_decode($CurlRequest->getContent());
 
-			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS ){
-				$given_name = trim($objStoryOwner->profiles[0]->given_name);
-				$byline = empty($given_name) ? 'Anonymous' : $given_name;
-
-				foreach( $objStoryOwner->profiles[0]->contacts as $key => $contact_data ){
-					if( $contact_data->contact_type == STORI_ES_CONTACT_GEOLOCATION ){
-						$city = trim($contact_data->location->city);
-						$state = trim($contact_data->location->state);
-						if( !empty($city) || !empty($state) )  $byline .= ' of ';
-						if( !empty($city) )  $byline .= ucfirst(strtolower($city));
-						if( !empty($state) ){
-							if( !empty($city) )  $byline .= ', ';
-							$byline .= strtoupper($state);
-						}
-
-						break;
-					}
-				}
-			}
+			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS )
+				$profile = new \stori_es\Profile($objStoryOwner->profiles[0]);
 		}
 
 		// GET default Content Document
@@ -299,52 +186,32 @@ function stori_es_get_story( $atts ){
 		$CurlRequest->createCurl($DocumentUrl);
 		$objDocument = json_decode($CurlRequest->getContent());
 
-	 	if( $objDocument->meta->status == STORI_ES_API_SUCCESS ){
-			// Get title
-			if( in_array('title', $arrIncludes) ){
-				if( isset($objDocument->documents[0]->title) ){
-					$title = wp_strip_all_tags($objDocument->documents[0]->title);
-				} else {
-					$title = 'Untitled';
-				}
-			}
-
-			// Get content
-			if( in_array('content', $arrIncludes) ){
-				foreach( $objDocument->documents[0]->blocks as $key => $block ){
-					switch( $block->block_type ){
-						case STORI_ES_BLOCK_CONTENT_TEXT:
-							$content[] = new stori_es_TextContentBlock($block);
-							break;
-						case STORI_ES_BLOCK_CONTENT_VIDEO:
-							$content[] = new stori_es_VideoContentBlock($block);
-							break;
-					}
-				}
-			}
-		}
+	 	if( $objDocument->meta->status == STORI_ES_API_SUCCESS )
+			$document = new \stori_es\Document($objDocument->documents[0]);
 	}
 
-	$wrapper  = '<div id="stori_es-story-'. $params['id'] . '" class="stori_es-story">';
+	$output  = '<div id="stori_es-story-'. $params['id'] . '" class="stori_es-story">';
 	foreach( $arrIncludes as $include ){
 		switch( $include ){
 			case 'title':
-				$wrapper .=  '<div class="stori_es-story-title">' . $title . '</div>';
+				$output .=  '<div class="stori_es-story-title">' . $document->title . '</div>';
 				break;
 			case 'byline':
-				$wrapper .=  '<div class="stori_es-story-byline">' . $byline . '</div>';
+				$output .=  $profile->output();
 				break;
 			case 'content':
-				$wrapper .= '<div class="stori_es-story-content">';
-				foreach( $content as $key => $block )  $wrapper .= $block->output();
-				$wrapper .= '</div>';
+				$output .=  $document->output();
 				break;
 		}
 	}
-  $wrapper .= '</div>';
+  $output .= '</div>';
 
-	return $wrapper;
+	return($output);
 }
+
+
+// [stori.es resource="collection" id="xxxx" include="xxxx"]
+function stori_es_get_collection_output( $atts ){}
 
 
 /* Add plugin styles */
