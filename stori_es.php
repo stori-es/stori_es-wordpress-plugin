@@ -15,7 +15,7 @@ if( ! defined('ABSPATH') )  exit();  // Exit if accessed directly
 
 define('NAMESPACE_SEPARATOR', '\\');
 define('STORI_ES_PATH', plugin_dir_path(__FILE__));
-define('STORI_ES_CLASS_PATH', STORI_ES_PATH . 'includes/classes/stori_es/');
+define('STORI_ES_CLASS_PATH', STORI_ES_PATH . 'includes/classes/');
 define('STORI_ES_URL',  plugin_dir_url(__FILE__));
 define('STORI_ES_API_SUCCESS', 'SUCCESS');
 define('STORI_ES_API_ERROR',   'ERROR');
