@@ -145,44 +145,58 @@ function stori_es_validate_apikey_callback() {
 
 // [stori.es resource="xxxx" id="xxxx" include="xxxx"]
 add_shortcode('stori.es', 'stori_es_shortcode');
-function stori_es_shortcode( $atts ){
-	$resource = strtolower($atts['resource']);
-	$output = '';
+function stori_es_shortcode( $attributes ){
+	$parameters = stori_es_shortcode_parameters($attributes);
 
-	switch( $resource ){
+	switch( $parameters['resource'] ){
 		case STORI_ES_RESOURCE_STORY:
-			$output = stori_es_get_story_output($atts);
+			$output = stori_es_get_story_output($parameters);
 			break;
 		case STORI_ES_RESOURCE_COLLECTION:
-			$output = stori_es_get_collection_output($atts);
+			$output = stori_es_get_collection_output($parameters);
 			break;
-		default:
-			$output = stori_es_get_story_output($atts);
 	}
 
 	return($output);
 }
 
 
-// [stori.es resource="story" id="xxxx" include="xxxx"]
-function stori_es_get_story_output( $atts ){
-	global $CurlRequest, $HttpHeaders;
+// Process shortcode attributes into parameters
+function stori_es_shortcode_parameters( $attributes ){
+	$attributes['resource'] = empty($attributes['resource']) ? 'story' : strtolower($attributes['resource']);
 
-	// Process shortcode parameters
-	$params = shortcode_atts(array('resource' => 'story', 'id' => '','include' => 'content'), $atts, 'stori_es');
-	$params['include'] = preg_replace('/\s+/', '', $params['include']);
-	$include_array = explode(',', $params['include']);
+	switch( $attributes['resource'] ){
+		case STORI_ES_RESOURCE_STORY:
+			$default_story_attributes = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'include' => 'content');
+			$parameters = shortcode_atts($default_story_attributes, $attributes, 'stori_es');
+			break;
+		case STORI_ES_RESOURCE_COLLECTION:
+			$default_collection_attributes = array('resource' => STORI_ES_RESOURCE_COLLECTION, 'id' => '', 'include' => 'content');
+			$parameters = shortcode_atts($default_collection_attributes, $attributes, 'stori_es');
+			break;
+	}
+
+	$parameters['include'] = preg_replace('/\s+/', '', $parameters['include']);
+	$parameters['include_array'] = explode(',', $parameters['include']);
+
+	return($parameters);
+}
+
+
+// [stori.es resource="story" id="xxxx" include="xxxx"]
+function stori_es_get_story_output( $parameters ){
+	global $CurlRequest, $HttpHeaders;
 
 	// GET Story
 	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'stories/' . $params['id']);
+	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'stories/' . $parameters['id']);
 	$objStory = json_decode($CurlRequest->getContent());
 
 	if( $objStory->meta->status == STORI_ES_API_SUCCESS ){
 		$story = new \stori_es\Story($objStory->stories[0]);
 
 		// GET byline via Story Owner Profile
-		if( in_array('byline', $include_array) ){
+		if( in_array('byline', $parameters['include_array']) ){
 			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 			$CurlRequest->createCurl($StoryOwnerUrl);
 			$objStoryOwner = json_decode($CurlRequest->getContent());
@@ -200,12 +214,43 @@ function stori_es_get_story_output( $atts ){
 			$story->content = new \stori_es\Document($objDocument->documents[0]);
 	}
 
-	return($story->output($include_array));
+	return($story->output($parameters['include_array']));
 }
 
 
 // [stori.es resource="collection" id="xxxx" include="xxxx"]
-function stori_es_get_collection_output( $atts ){}
+function stori_es_get_collection_output( $parameters ){
+	global $CurlRequest, $HttpHeaders;
+
+	// GET Collection
+	$CurlRequest->setHttpHeaders($HttpHeaders);
+	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'stories/' . $parameters['id']);
+	$objStory = json_decode($CurlRequest->getContent());
+
+	if( $objStory->meta->status == STORI_ES_API_SUCCESS ){
+		$story = new \stori_es\Story($objStory->stories[0]);
+
+		// GET byline via Story Owner Profile
+		if( in_array('byline', $parameters['include_array']) ){
+			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
+			$CurlRequest->createCurl($StoryOwnerUrl);
+			$objStoryOwner = json_decode($CurlRequest->getContent());
+
+			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS )
+				$story->owner = new \stori_es\Profile($objStoryOwner->profiles[0]);
+		}
+
+		// GET default Content Document
+		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
+		$CurlRequest->createCurl($DocumentUrl);
+		$objDocument = json_decode($CurlRequest->getContent());
+
+	 	if( $objDocument->meta->status == STORI_ES_API_SUCCESS )
+			$story->content = new \stori_es\Document($objDocument->documents[0]);
+	}
+
+	return($story->output($parameters['include_array']));
+}
 
 
 /* Add plugin styles */
