@@ -156,6 +156,8 @@ function stori_es_shortcode( $atts ){
 		case STORI_ES_RESOURCE_COLLECTION:
 			$output = stori_es_get_collection_output($atts);
 			break;
+		default:
+			$output = stori_es_get_story_output($atts);
 	}
 
 	return($output);
@@ -167,9 +169,9 @@ function stori_es_get_story_output( $atts ){
 	global $CurlRequest, $HttpHeaders;
 
 	// Process shortcode parameters
-	$params = shortcode_atts(array('resource' => 'story', 'id' => '','include' => 'content'), $atts);
+	$params = shortcode_atts(array('resource' => 'story', 'id' => '','include' => 'content'), $atts, 'stori_es');
 	$params['include'] = preg_replace('/\s+/', '', $params['include']);
-	$arrIncludes = explode(',', $params['include']);
+	$include_array = explode(',', $params['include']);
 
 	// GET Story
 	$CurlRequest->setHttpHeaders($HttpHeaders);
@@ -177,14 +179,16 @@ function stori_es_get_story_output( $atts ){
 	$objStory = json_decode($CurlRequest->getContent());
 
 	if( $objStory->meta->status == STORI_ES_API_SUCCESS ){
+		$story = new \stori_es\Story($objStory->stories[0]);
+
 		// GET byline via Story Owner Profile
-		if( in_array('byline', $arrIncludes) ){
+		if( in_array('byline', $include_array) ){
 			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
 			$CurlRequest->createCurl($StoryOwnerUrl);
 			$objStoryOwner = json_decode($CurlRequest->getContent());
 
 			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS )
-				$profile = new \stori_es\Profile($objStoryOwner->profiles[0]);
+				$story->owner = new \stori_es\Profile($objStoryOwner->profiles[0]);
 		}
 
 		// GET default Content Document
@@ -193,26 +197,10 @@ function stori_es_get_story_output( $atts ){
 		$objDocument = json_decode($CurlRequest->getContent());
 
 	 	if( $objDocument->meta->status == STORI_ES_API_SUCCESS )
-			$document = new \stori_es\Document($objDocument->documents[0]);
+			$story->content = new \stori_es\Document($objDocument->documents[0]);
 	}
 
-	$output  = '<div id="stori_es-story-'. $params['id'] . '" class="stori_es-story">';
-	foreach( $arrIncludes as $include ){
-		switch( $include ){
-			case 'title':
-				$output .=  '<div class="stori_es-story-title">' . $document->title . '</div>';
-				break;
-			case 'byline':
-				$output .=  $profile->output();
-				break;
-			case 'content':
-				$output .=  $document->output();
-				break;
-		}
-	}
-  $output .= '</div>';
-
-	return($output);
+	return($story->output($include_array));
 }
 
 
