@@ -21,7 +21,7 @@ class Profile {
 	public function output(){
 		$output = '<div class="stori_es-story-byline">';
 		$output .= $this->given_name;
-		if( count($this->contacts) == 1 )  $output .= $this->contacts[0].output();
+		if( count($this->contacts) == 1 )  $output .= $this->contacts[0]->output();
 		$output .= '</div>';
 		return($output);
 	}
