@@ -173,7 +173,7 @@ function stori_es_shortcode_parameters( $attributes ){
 			$parameters = shortcode_atts($default_story_attributes, $attributes, 'stori_es');
 			break;
 		case STORI_ES_RESOURCE_COLLECTION:
-			$default_collection_attributes = array('resource' => STORI_ES_RESOURCE_COLLECTION, 'id' => '', 'include' => 'content');
+			$default_collection_attributes = array('resource' => STORI_ES_RESOURCE_COLLECTION, 'id' => '', 'include' => 'content', 'limit' => 3);
 			$parameters = shortcode_atts($default_collection_attributes, $attributes, 'stori_es');
 			break;
 	}
@@ -233,9 +233,9 @@ function stori_es_get_collection( $parameters ){
 		$collection = new \stori_es\Collection($collection_response->collections[0]);
 
 		$story_links = $collection_response->collections[0]->links->stories;
-		$story_count = (count($story_links) < 3) ? count($story_links) : 3;
+		$story_limit = (count($story_links) < $parameters['limit']) ? count($story_links) : $parameters['limit'];
 		$story_parameters = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'include' => $parameters['include'], 'include_array' => $parameters['include_array']);
-		for( $index = 0; $index < $story_count; $index++ ){
+		for( $index = 0; $index < $story_limit; $index++ ){
 			$story_link_segments = explode('/', $story_links[$index]->href);
 			$story_parameters['id'] = end($story_link_segments);
 			$collection->stories[] = stori_es_get_story($story_parameters);
