@@ -150,10 +150,12 @@ function stori_es_shortcode( $attributes ){
 
 	switch( $parameters['resource'] ){
 		case STORI_ES_RESOURCE_STORY:
-			$output = stori_es_get_story_output($parameters);
+		  $story = stori_es_get_story($parameters);
+			$output = $story->output($parameters['include_array']);
 			break;
 		case STORI_ES_RESOURCE_COLLECTION:
-			$output = stori_es_get_collection_output($parameters);
+			$collection = stori_es_get_collection($parameters);
+			$output = $collection->output(3, $parameters['include_array']);
 			break;
 	}
 
@@ -184,7 +186,7 @@ function stori_es_shortcode_parameters( $attributes ){
 
 
 // [stori.es resource="story" id="xxxx" include="xxxx"]
-function stori_es_get_story_output( $parameters ){
+function stori_es_get_story( $parameters ){
 	global $CurlRequest, $HttpHeaders;
 
 	// GET Story
@@ -214,42 +216,33 @@ function stori_es_get_story_output( $parameters ){
 			$story->content = new \stori_es\Document($objDocument->documents[0]);
 	}
 
-	return($story->output($parameters['include_array']));
+	return($story);
 }
 
 
 // [stori.es resource="collection" id="xxxx" include="xxxx"]
-function stori_es_get_collection_output( $parameters ){
+function stori_es_get_collection( $parameters ){
 	global $CurlRequest, $HttpHeaders;
 
 	// GET Collection
 	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'stories/' . $parameters['id']);
-	$objStory = json_decode($CurlRequest->getContent());
+	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'collections/' . $parameters['id']);
+	$collection_response = json_decode($CurlRequest->getContent());
 
-	if( $objStory->meta->status == STORI_ES_API_SUCCESS ){
-		$story = new \stori_es\Story($objStory->stories[0]);
+	if( $collection_response->meta->status == STORI_ES_API_SUCCESS ){
+		$collection = new \stori_es\Collection($collection_response->collections[0]);
 
-		// GET byline via Story Owner Profile
-		if( in_array('byline', $parameters['include_array']) ){
-			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
-			$CurlRequest->createCurl($StoryOwnerUrl);
-			$objStoryOwner = json_decode($CurlRequest->getContent());
-
-			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS )
-				$story->owner = new \stori_es\Profile($objStoryOwner->profiles[0]);
+		$story_links = $collection_response->collections[0]->links->stories;
+		$story_count = (count($story_links) < 3) ? count($story_links) : 3;
+		$story_parameters = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'include' => $parameters['include'], 'include_array' => $parameters['include_array']);
+		for( $index = 0; $index < $story_count; $index++ ){
+			$story_link_segments = explode('/', $story_links[$index]->href);
+			$story_parameters['id'] = end($story_link_segments);
+			$collection->stories[] = stori_es_get_story($story_parameters);
 		}
-
-		// GET default Content Document
-		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
-		$CurlRequest->createCurl($DocumentUrl);
-		$objDocument = json_decode($CurlRequest->getContent());
-
-	 	if( $objDocument->meta->status == STORI_ES_API_SUCCESS )
-			$story->content = new \stori_es\Document($objDocument->documents[0]);
 	}
 
-	return($story->output($parameters['include_array']));
+	return($collection);
 }
 
 

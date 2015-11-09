@@ -15,13 +15,18 @@ class Story {
 		foreach( $include_array as $include ){
 			switch( $include ){
 				case 'title':
-					$output .=  '<div class="stori_es-story-title">' . $this->content->title . '</div>';
+				  if( isset($this->content) )
+					  $output .= '<div class="stori_es-story-title">' . $this->content->title . '</div>';
 					break;
 				case 'byline':
-					$output .=  $this->owner->output();
+				  if( isset($this->owner) )
+					  $output .= $this->owner->output();
 					break;
 				case 'content':
-					$output .=  $this->content->output();
+				  if( isset($this->content) )
+					  $output .= $this->content->output();
+					else
+						$output .= '<em>Content temporarily unavailable</em>';
 					break;
 			}
 		}
