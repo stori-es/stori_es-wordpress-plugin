@@ -232,7 +232,11 @@ function stori_es_get_collection( $parameters ){
 	if( $collection_response->meta->status == STORI_ES_API_SUCCESS ){
 		$collection = new \stori_es\Collection($collection_response->collections[0]);
 
+		// Story links are unsorted for the time being [ TASK-1925 ]; implement
+		// temporary creation date descending sort
 		$story_links = $collection_response->collections[0]->links->stories;
+		usort($story_links, function($a, $b){ return strcmp($b->href, $a->href); });
+
 		$story_limit = (count($story_links) < $parameters['limit']) ? count($story_links) : $parameters['limit'];
 		$story_parameters = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'include' => $parameters['include'], 'include_array' => $parameters['include_array']);
 		for( $index = 0; $index < $story_limit; $index++ ){
