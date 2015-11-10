@@ -13,16 +13,18 @@
 
 if( ! defined('ABSPATH') )  exit();  // Exit if accessed directly
 
-define('NAMESPACE_SEPARATOR', '\\');
-define('STORI_ES_CLASS_NAMESPACE', 'stori_es');
-define('STORI_ES_PATH', plugin_dir_path(__FILE__));
-define('STORI_ES_CLASS_PATH', STORI_ES_PATH . 'includes/classes/');
 define('STORI_ES_URL',  plugin_dir_url(__FILE__));
+define('STORI_ES_PATH', plugin_dir_path(__FILE__));
+define('STORI_ES_CACHE_PATH', STORI_ES_PATH . 'cache/');
+define('NAMESPACE_SEPARATOR', '\\');
+define('STORI_ES_CLASS_PATH', STORI_ES_PATH . 'includes/classes/');
+define('STORI_ES_CLASS_NAMESPACE', 'stori_es');
 define('STORI_ES_API_SUCCESS', 'SUCCESS');
 define('STORI_ES_API_ERROR',   'ERROR');
 define('STORI_ES_API_INVALID', 'INVALID');
 define('STORI_ES_RESOURCE_STORY', 'story');
 define('STORI_ES_RESOURCE_COLLECTION', 'collection');
+define('DEBUG', false);
 
 global $wpdb;
 
@@ -32,7 +34,7 @@ $HttpHeaders = array(
 		'Cache-Control: no-cache');
 
 
-// Autoload classes
+// stori.es PHP class autoloader
 spl_autoload_register(function( $class_name ){
 	// Ensure we are only autoloading stori_es classes
 	if( substr($class_name, 0, 8) === STORI_ES_CLASS_NAMESPACE ){
@@ -101,7 +103,7 @@ function stori_es_validate_apiurl_callback( $local = false ){
 		unset($lHttpHeaders[1]);
 
 		// GET /users/self JSON to confirm API access
-		$CurlRequest = new CurlRequest ();
+		$CurlRequest = new CurlRequest();
 		$CurlRequest->setHttpHeaders($lHttpHeaders);
 		$CurlRequest->setCustomRequest();
 		$CurlRequest->createCurl( $api_url . 'users/self' );
@@ -129,7 +131,7 @@ function stori_es_validate_apikey_callback() {
 		$api_url = stori_es_correct_api_url($_POST['api_url']);
 
 		// GET /users/self JSON to confirm API access
-		$CurlRequest = new CurlRequest ();
+		$CurlRequest = new CurlRequest();
 		$CurlRequest->setHttpHeaders($lHttpHeaders);
 		$CurlRequest->createCurl ( $api_url . 'users/self' );
 		$objUser = json_decode($CurlRequest->getContent());
@@ -155,7 +157,7 @@ function stori_es_shortcode( $attributes ){
 			break;
 		case STORI_ES_RESOURCE_COLLECTION:
 			$collection = stori_es_get_collection($parameters);
-			$output = $collection->output(3, $parameters['include_array']);
+			$output = $collection->output($parameters['limit'], $parameters['include_array']);
 			break;
 	}
 
@@ -185,35 +187,75 @@ function stori_es_shortcode_parameters( $attributes ){
 }
 
 
+function stori_es_cache_json( $href, $json ){
+	$filename = STORI_ES_CACHE_PATH . md5($href) . '.json';
+	if( is_file($filename) )  unlink($filename);
+	file_put_contents($filename, $json, LOCK_EX);
+}
+
+
+function stori_es_get_cached_json( $href ){
+	$filename = STORI_ES_CACHE_PATH . md5($href) . '.json';
+	if( is_file($filename) ){
+		// Test for cache expiration
+		$cache_lifecycle = 300;
+		if( filemtime($filename) < (time() - $cache_lifecycle) ){
+			unlink($filename);
+			return(false);
+		}
+
+		return(file_get_contents($filename));
+	}
+
+	return(false);
+}
+
+
+function stori_es_fetch_json_as_object( $href ){
+	$time_start = microtime(true);
+	$json = stori_es_get_cached_json($href);
+	if( !$json ){
+		global $CurlRequest, $HttpHeaders;
+		$CurlRequest->setHttpHeaders($HttpHeaders);
+		$CurlRequest->createCurl($href);
+		$json = $CurlRequest->getContent();
+		stori_es_cache_json($href, $json);
+	}
+	$json_object = json_decode($json);
+
+	if( DEBUG ){
+		$time = microtime(true) - $time_start;
+		echo "stori_es_fetch_json_as_object( $href ) = $time<br/>";
+	}
+
+	return($json_object);
+}
+
+
 // [stori.es resource="story" id="xxxx" include="xxxx"]
 function stori_es_get_story( $parameters ){
-	global $CurlRequest, $HttpHeaders;
-
 	// GET Story
-	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'stories/' . $parameters['id']);
-	$objStory = json_decode($CurlRequest->getContent());
+	$story_href = get_option('stori_es_api_url') . 'stories/' . $parameters['id'];
+	$story_json = stori_es_fetch_json_as_object($story_href);
 
-	if( $objStory->meta->status == STORI_ES_API_SUCCESS ){
-		$story = new \stori_es\Story($objStory->stories[0]);
+	if( $story_json->meta->status == STORI_ES_API_SUCCESS ){
+		$story = new \stori_es\Story($story_json->stories[0]);
 
 		// GET byline via Story Owner Profile
 		if( in_array('byline', $parameters['include_array']) ){
-			$StoryOwnerUrl = $objStory->stories[0]->links->owner->href;
-			$CurlRequest->createCurl($StoryOwnerUrl);
-			$objStoryOwner = json_decode($CurlRequest->getContent());
+			$owner_href = $story_json->stories[0]->links->owner->href;
+			$owner_json = stori_es_fetch_json_as_object($owner_href);
 
-			if( $objStoryOwner->meta->status == STORI_ES_API_SUCCESS )
-				$story->owner = new \stori_es\Profile($objStoryOwner->profiles[0]);
+			if( $owner_json->meta->status == STORI_ES_API_SUCCESS )
+				$story->owner = new \stori_es\Profile($owner_json->profiles[0]);
 		}
 
 		// GET default Content Document
-		$DocumentUrl = $objStory->stories[0]->links->default_content->href;
-		$CurlRequest->createCurl($DocumentUrl);
-		$objDocument = json_decode($CurlRequest->getContent());
+		$document_href = $story_json->stories[0]->links->default_content->href;
+		$document_json = stori_es_fetch_json_as_object($document_href);
 
-	 	if( $objDocument->meta->status == STORI_ES_API_SUCCESS )
-			$story->content = new \stori_es\Document($objDocument->documents[0]);
+	 	if( $document_json->meta->status == STORI_ES_API_SUCCESS )
+			$story->content = new \stori_es\Document($document_json->documents[0]);
 	}
 
 	return($story);
@@ -222,19 +264,16 @@ function stori_es_get_story( $parameters ){
 
 // [stori.es resource="collection" id="xxxx" include="xxxx"]
 function stori_es_get_collection( $parameters ){
-	global $CurlRequest, $HttpHeaders;
-
 	// GET Collection
-	$CurlRequest->setHttpHeaders($HttpHeaders);
-	$CurlRequest->createCurl(get_option('stori_es_api_url') . 'collections/' . $parameters['id']);
-	$collection_response = json_decode($CurlRequest->getContent());
+	$collection_href = get_option('stori_es_api_url') . 'collections/' . $parameters['id'];
+	$collection_json = stori_es_fetch_json_as_object($collection_href);
 
-	if( $collection_response->meta->status == STORI_ES_API_SUCCESS ){
-		$collection = new \stori_es\Collection($collection_response->collections[0]);
+	if( $collection_json->meta->status == STORI_ES_API_SUCCESS ){
+		$collection = new \stori_es\Collection($collection_json->collections[0]);
 
 		// Story links are unsorted for the time being [ TASK-1925 ]; implement
 		// temporary creation date descending sort
-		$story_links = $collection_response->collections[0]->links->stories;
+		$story_links = $collection_json->collections[0]->links->stories;
 		usort($story_links, function($a, $b){ return strcmp($b->href, $a->href); });
 
 		$story_limit = (count($story_links) < $parameters['limit']) ? count($story_links) : $parameters['limit'];
@@ -287,6 +326,9 @@ function stori_es_activation(){
 			'stori_es_api_key' => ''
 	);
 	stori_es_set_options($options_array);
+
+	// Create API cache
+	if( !is_dir(STORI_ES_CACHE_PATH) )  mkdir(STORI_ES_CACHE_PATH);
 }
 
 
@@ -298,9 +340,15 @@ function stori_es_deactivation(){
 
 register_uninstall_hook(__FILE__, 'stori_es_uninstall');
 function stori_es_uninstall(){
-	global $wpdb;
 	delete_option('stori_es_api_url');
 	delete_option('stori_es_api_key');
+
+	// Delete API cache
+	if( is_dir(STORI_ES_CACHE_PATH) ){
+		array_map('unlink', glob(STORI_ES_CACHE_PATH . '*.json'));
+		rmdir(STORI_ES_CACHE_PATH);
+	}
+
 	return true;
 }
 

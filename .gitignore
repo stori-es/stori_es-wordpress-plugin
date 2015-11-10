@@ -1,3 +1,6 @@
+# Ignore the API JSON response cache
+cache/*
+
 # Created by https://www.gitignore.io/api/archives,osx,windows,linux,vim,sublimetext,textmate
 
 ### Archives ###
