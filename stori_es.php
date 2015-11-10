@@ -106,7 +106,7 @@ function stori_es_validate_apiurl_callback( $local = false ){
 		$CurlRequest = new CurlRequest();
 		$CurlRequest->setHttpHeaders($lHttpHeaders);
 		$CurlRequest->setCustomRequest();
-		$CurlRequest->createCurl( $api_url . 'users/self' );
+		$CurlRequest->createCurl($api_url . 'users/self');
 		json_decode($CurlRequest->getContent());
 
 		$result = $CurlRequest->getHttpStatus();
@@ -133,7 +133,7 @@ function stori_es_validate_apikey_callback() {
 		// GET /users/self JSON to confirm API access
 		$CurlRequest = new CurlRequest();
 		$CurlRequest->setHttpHeaders($lHttpHeaders);
-		$CurlRequest->createCurl ( $api_url . 'users/self' );
+		$CurlRequest->createCurl($api_url . 'users/self');
 		$objUser = json_decode($CurlRequest->getContent());
 
 		echo $objUser->meta->status; // return value to ajax script
@@ -198,7 +198,7 @@ function stori_es_get_cached_json( $href ){
 	$filename = STORI_ES_CACHE_PATH . md5($href) . '.json';
 	if( is_file($filename) ){
 		// Test for cache expiration
-		$cache_lifecycle = 300;
+		$cache_lifecycle = get_option('stori_es_api_cache_timeout');
 		if( filemtime($filename) < (time() - $cache_lifecycle) ){
 			unlink($filename);
 			return(false);
@@ -306,14 +306,15 @@ function stori_es_add_public_styles(){
 /* Add plugin JavaScripts */
 add_action( 'admin_enqueue_scripts', 'stori_es_adding_scripts' );
 function stori_es_adding_scripts(){
-	wp_register_script('stori-es-script', STORI_ES_URL . 'includes/js/stori_es-api.js', array('jquery','jquery-ui-core'));
-	wp_enqueue_script('stori-es-script');
+	wp_register_script('stori_es-script', STORI_ES_URL . 'includes/js/stori_es-api.js', array('jquery','jquery-ui-core'));
+	wp_enqueue_script('stori_es-script');
 
 	// In JavaScript, object properties are accessed as ajax_object.ajax_url, ajax_object.we_value
-	wp_localize_script('stori-es-script', 'ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
-	wp_localize_script('stori-es-script', 'php_vars', array(
+	wp_localize_script('stori_es-script', 'ajax_object', array('ajax_url' => admin_url('admin-ajax.php')));
+	wp_localize_script('stori_es-script', 'php_vars', array(
 		  'api_url' => get_option('stori_es_api_url'),
-			'api_key' => get_option('stori_es_api_key')
+			'api_key' => get_option('stori_es_api_key'),
+			'api_cache_timeout' => get_option('stori_es_api_cache_timeout')
 	));
 }
 
@@ -322,8 +323,9 @@ register_activation_hook(__FILE__, 'stori_es_activation');
 function stori_es_activation(){
 	// Plugin options
 	$options_array = array(
-			'stori_es_api_url' => 'https://stori.es/api/',
-			'stori_es_api_key' => ''
+		'stori_es_api_url' => 'https://stori.es/api/',
+		'stori_es_api_key' => '',
+		'stori_es_api_cache_timeout' => 300
 	);
 	stori_es_set_options($options_array);
 
@@ -342,6 +344,7 @@ register_uninstall_hook(__FILE__, 'stori_es_uninstall');
 function stori_es_uninstall(){
 	delete_option('stori_es_api_url');
 	delete_option('stori_es_api_key');
+	delete_option('stori_es_api_cache_timeout');
 
 	// Delete API cache
 	if( is_dir(STORI_ES_CACHE_PATH) ){

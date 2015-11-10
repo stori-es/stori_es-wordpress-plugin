@@ -5,7 +5,7 @@
   -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.04);
   box-shadow: 0 1px 1px rgba(0,0,0,.04);
   background: #fff;
-} 
+}
 
 form .section {
 	margin: 0px 0px 20px 0px;
@@ -28,7 +28,11 @@ h3 {
   line-height: 1;
 }
 
-.form-table th, .form-table td {
+.form-table th {
+  padding: 12px 10px 7px;
+}
+
+.form-table td {
 	padding: 7px 10px;
 }
 
