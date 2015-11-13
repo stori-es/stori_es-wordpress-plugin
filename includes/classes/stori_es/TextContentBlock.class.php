@@ -6,8 +6,9 @@ class TextContentBlock {
 	public $image;
 
 	public function __construct($source){
-		// Precede newlines with HTML <br /> tags
-		$this->value = nl2br($source->value);
+		// If helpful, precede newlines with HTML <br /> tags
+		$this->value = ($source->format == 'multiple_lines_rich_text') ?
+				$source->value : nl2br($source->value);
 
 		// Retrieve image if present
 		if( isset($source->image) )
