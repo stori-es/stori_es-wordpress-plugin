@@ -11,13 +11,17 @@ class Collection {
 		$this->title = $source->title;
 	}
 
-	public function output( $story_count, $include_array ){
-		if( count($this->stories) < $story_count )
-		 	$story_count = count($this->stories);
-
+	public function output( $collection_elements, $story_elements, $story_count ){
 		$output = '<div id="stori_es-collection-' . $this->id . '" class="stori_es-collection">';
-		for( $index = 0; $index < $story_count; $index++ )
-			$output .= $this->stories[$index]->output($include_array);
+		foreach( $collection_elements as $include ){
+			switch( $include ){
+				case 'stories':
+					if( count($this->stories) < $story_count )  $story_count = count($this->stories);
+					for( $index = 0; $index < $story_count; $index++ )
+						$output .= $this->stories[$index]->output($story_elements);
+					break;
+			}
+		}
 		$output .= '</div>';
 
 		return($output);

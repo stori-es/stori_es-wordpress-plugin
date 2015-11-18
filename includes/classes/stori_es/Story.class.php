@@ -10,9 +10,9 @@ class Story {
 		$this->id = $source->id;
 	}
 
-	public function output( $include_array ){
+	public function output( $story_elements ){
 		$output = '<div id="stori_es-story-'. $this->id . '" class="stori_es-story">';
-		foreach( $include_array as $include ){
+		foreach( $story_elements as $include ){
 			switch( $include ){
 				case 'title':
 				  if( isset($this->content) )
