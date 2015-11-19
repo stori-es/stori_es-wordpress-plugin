@@ -17,6 +17,9 @@ class Collection {
 		$output = '<div id="stori_es-collection-' . $this->id . '" class="stori_es-collection">';
 		foreach( $collection_elements as $include ){
 			switch( $include ){
+				case 'title':
+					$output .= '<div class="stori_es-collection-title">' . $this->title . '</div>';
+					break;
 				case 'count':
 					$output .= '<div class="stori_es-collection-count">' . $this->story_count . '</div>';
 					break;
