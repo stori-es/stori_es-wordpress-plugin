@@ -145,7 +145,8 @@ function stori_es_validate_apikey_callback() {
 }
 
 
-// [stori.es resource="xxxx" id="xxxx" include="xxxx"]
+// [stori.es story="xxxx" id="xxxx"]
+// [stori.es collection="xxxx" id="xxxx"]
 add_shortcode('stori.es', 'stori_es_shortcode');
 function stori_es_shortcode( $attributes ){
 	$parameters = stori_es_shortcode_parameters($attributes);
@@ -153,11 +154,11 @@ function stori_es_shortcode( $attributes ){
 	switch( $parameters['resource'] ){
 		case STORI_ES_RESOURCE_STORY:
 		  $story = stori_es_get_story($parameters);
-			$output = $story->output($parameters['include_array']);
+			$output = $story->output($parameters['story_elements']);
 			break;
 		case STORI_ES_RESOURCE_COLLECTION:
 			$collection = stori_es_get_collection($parameters);
-			$output = $collection->output($parameters['limit'], $parameters['include_array']);
+			$output = $collection->output($parameters['collection_elements'], $parameters['story_elements'], $parameters['limit']);
 			break;
 	}
 
@@ -167,21 +168,30 @@ function stori_es_shortcode( $attributes ){
 
 // Process shortcode attributes into parameters
 function stori_es_shortcode_parameters( $attributes ){
-	$attributes['resource'] = empty($attributes['resource']) ? 'story' : strtolower($attributes['resource']);
+	// Document the requested resource type
+	if( !empty($attributes[STORI_ES_RESOURCE_STORY]) )
+		$attributes['resource'] = STORI_ES_RESOURCE_STORY;
+	elseif( !empty($attributes[STORI_ES_RESOURCE_COLLECTION]) )
+		$attributes['resource'] = STORI_ES_RESOURCE_COLLECTION;
 
 	switch( $attributes['resource'] ){
 		case STORI_ES_RESOURCE_STORY:
-			$default_story_attributes = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'include' => 'content');
+			$default_story_attributes = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'story' => 'content');
 			$parameters = shortcode_atts($default_story_attributes, $attributes, 'stori_es');
+			$parameters['story'] = preg_replace('/\s+/', '', $parameters['story']);
+			$parameters['story_elements'] = explode(',', $parameters['story']);
 			break;
 		case STORI_ES_RESOURCE_COLLECTION:
-			$default_collection_attributes = array('resource' => STORI_ES_RESOURCE_COLLECTION, 'id' => '', 'include' => 'content', 'limit' => 3);
+			$default_collection_attributes = array('resource' => STORI_ES_RESOURCE_COLLECTION, 'id' => '', 'collection' => 'stories', 'stories' => 'content', 'limit' => 3);
 			$parameters = shortcode_atts($default_collection_attributes, $attributes, 'stori_es');
+			$parameters['collection'] = preg_replace('/\s+/', '', $parameters['collection']);
+			$parameters['collection_elements'] = explode(',', $parameters['collection']);
+			if( !empty($parameters['stories']) ){
+				$parameters['stories'] = preg_replace('/\s+/', '', $parameters['stories']);
+				$parameters['story_elements'] = explode(',', $parameters['stories']);
+			}
 			break;
 	}
-
-	$parameters['include'] = preg_replace('/\s+/', '', $parameters['include']);
-	$parameters['include_array'] = explode(',', $parameters['include']);
 
 	return($parameters);
 }
@@ -232,7 +242,7 @@ function stori_es_fetch_json_as_object( $href ){
 }
 
 
-// [stori.es resource="story" id="xxxx" include="xxxx"]
+// [stori.es story="xxxx" id="xxxx"]
 function stori_es_get_story( $parameters ){
 	// GET Story
 	$story_href = get_option('stori_es_api_url') . 'stories/' . $parameters['id'];
@@ -242,7 +252,7 @@ function stori_es_get_story( $parameters ){
 		$story = new \stori_es\Story($story_json->stories[0]);
 
 		// GET byline via Story Owner Profile
-		if( in_array('byline', $parameters['include_array']) ){
+		if( in_array('byline', $parameters['story_elements']) ){
 			$owner_href = $story_json->stories[0]->links->owner->href;
 			$owner_json = stori_es_fetch_json_as_object($owner_href);
 
@@ -262,7 +272,7 @@ function stori_es_get_story( $parameters ){
 }
 
 
-// [stori.es resource="collection" id="xxxx" include="xxxx"]
+// [stori.es collection="xxxx" id="xxxx" stories="xxxx" limit="n"]
 function stori_es_get_collection( $parameters ){
 	// GET Collection
 	$collection_href = get_option('stori_es_api_url') . 'collections/' . $parameters['id'];
@@ -277,7 +287,7 @@ function stori_es_get_collection( $parameters ){
 		usort($story_links, function($a, $b){ return strcmp($b->href, $a->href); });
 
 		$story_limit = (count($story_links) < $parameters['limit']) ? count($story_links) : $parameters['limit'];
-		$story_parameters = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'include' => $parameters['include'], 'include_array' => $parameters['include_array']);
+		$story_parameters = array('resource' => STORI_ES_RESOURCE_STORY, 'id' => '', 'story' => $parameters['stories'], 'story_elements' => $parameters['story_elements']);
 		for( $index = 0; $index < $story_limit; $index++ ){
 			$story_link_segments = explode('/', $story_links[$index]->href);
 			$story_parameters['id'] = end($story_link_segments);
